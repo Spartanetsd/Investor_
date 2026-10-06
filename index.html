@@ -9,6 +9,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="description" content="Потік — настільна економічна гра в браузері: вийди з кола найму, коли пасивний дохід перевищить витрати.">
 <title>Потік</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Ccircle cx=%2732%27 cy=%2732%27 r=%2730%27 fill=%27%233ddc84%27/%3E%3Ctext x=%2732%27 y=%2742%27 font-size=%2732%27 font-family=%27Arial%27 font-weight=%27700%27 text-anchor=%27middle%27 fill=%27%2306130b%27%3E%E2%82%B4%3C/text%3E%3C/svg%3E">
 <style>
 /* Layout: phone-first single column (header strip → square board → tabbed ledger); two columns from 860px. Dark, committed single theme. */
@@ -533,6 +535,49 @@ body.escaping .toasts{opacity:0;transition:opacity .2s}
 .jrow:first-of-type{border-top:0}
 .jrow b{flex:1;text-align:right}
 .jrow .x{padding:2px 6px;font-size:16px}
+
+/* ---------- компактні розділи на телефоні ---------- */
+.site-grid{grid-template-columns:1fr 1fr}
+.site-card{flex-direction:column;align-items:flex-start;gap:10px;padding:14px}
+.site-card img{width:44px;height:44px}
+.site-card b{font-size:15px}
+.site-card small{font-size:12px}
+@media(min-width:640px){.site-grid{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:960px){.site-grid{grid-template-columns:repeat(4,1fr)}}
+@media(min-width:640px){.site-card{flex-direction:row;align-items:center;gap:14px}.site-card img{width:52px;height:52px}}
+
+/* ---------- боти у виклику дня ---------- */
+.bench{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.bench .br{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;background:var(--surface2);font-size:13px}
+.bench .br b{flex:1;font-weight:600}
+.bench .br span{color:var(--muted);white-space:nowrap}
+.bench .br.beat{background:rgba(61,220,132,.12)}
+.bench .br.beat span{color:var(--money)}
+.titles-new{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;margin-top:12px}
+.titles-new small{width:100%;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.titles-new span{padding:5px 11px;border-radius:999px;background:rgba(255,211,106,.14);color:var(--dream);font-size:13px;font-weight:600}
+.badgegrid.titles .ph{font-size:34px}
+
+/* ---------- словник у картці ---------- */
+.tt{border-bottom:1px dotted var(--muted);cursor:pointer}
+.termdef{grid-column:1/-1;font-size:12px;line-height:1.4;padding:8px 10px;border-radius:8px;background:var(--bg);color:#cfd6e2}
+.termdef b{color:var(--fg)}
+
+/* ---------- навчальна партія ---------- */
+.tour{position:fixed;inset:0;z-index:45;pointer-events:none}
+.tour-box{position:absolute;left:16px;right:16px;max-width:420px;margin:0 auto;background:var(--surface);border:1px solid var(--dream);border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.4;color:#d6dce6;pointer-events:auto;box-shadow:0 12px 40px rgba(0,0,0,.6);display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.tour-box p{margin:0}
+.tour-box b{color:var(--fg)}
+.tour-box::before{content:"";position:absolute;width:14px;height:14px;background:var(--surface);border:1px solid var(--dream);transform:rotate(45deg);left:var(--ax,40px)}
+.tour.below .tour-box::before{top:-8px;border-right:0;border-bottom:0}
+.tour.above .tour-box::before{bottom:-8px;border-left:0;border-top:0}
+.tour-hi{box-shadow:0 0 0 3px var(--dream),0 0 24px rgba(255,211,106,.5)!important}
+.center.tour-hi{border-radius:50%}
+#tabs.tour-hi,.cbtn.tour-hi,.kv.tour-hi{border-radius:14px}
+@media(min-width:620px){.tour-box{left:50%;right:auto;transform:translateX(-50%);width:420px}}
+
+.sharepic{display:block;width:100%;border-radius:14px;margin-top:12px;border:1px solid var(--line)}
+a.btn{text-decoration:none}
 </style>
 </head>
 <body>
@@ -545,9 +590,9 @@ body.escaping .toasts{opacity:0;transition:opacity .2s}
     <div class="logo">ПО<b>ТІК</b></div>
     <p class="tag">Гра про гроші, які працюють замість вас.</p>
     <div class="menu-btns">
+      <button class="btn" id="m-continue" hidden>Продовжити<small>збережена партія</small></button>
       <button class="btn primary" id="m-quick">Грати<small>ви проти двох ботів · 15–20 хвилин</small></button>
       <button class="btn daily" id="m-daily">Виклик дня<small id="m-daily-sub"></small></button>
-      <button class="btn" id="m-continue" hidden>Продовжити</button>
       <div class="menu-links"><button id="m-new">Налаштувати гру</button><span>·</span><button id="m-rules">Як грати</button></div>
     </div>
     <p class="fine" id="m-rec"></p>
@@ -645,7 +690,7 @@ body.escaping .toasts{opacity:0;transition:opacity .2s}
     <li data-cell="doodad"><span class="sw" style="background:var(--doodad)"></span><span class="emo">🛍 </span><b>Витрата</b>: життя трапляється; що більша зарплата, то дорожче</li>
     <li data-cell="baby"><span class="sw" style="background:var(--baby)"></span><span class="emo">👶 </span><b>Дитина</b>: нові щомісячні витрати</li>
     <li data-cell="charity"><span class="sw" style="background:var(--charity)"></span><span class="emo">❤️ </span><b>Благодійність</b>: 10% доходу за 3 ходи з вибором 1 або 2 кубиків</li>
-    <li data-cell="downsize"><span class="sw" style="background:var(--downsize)"></span><span class="emo">📉 </span><b>Звільнення</b>: місяць витрат і 2 пропущені ходи</li>
+    <li data-cell="downsize"><span class="sw" style="background:var(--downsize)"></span><span class="emo">📉 </span><b>Звільнення</b>: місяць витрат, пропуск ходу і вибір — курси, підробіток чи відпочинок</li>
     <li data-cell="energy"><span class="sw" style="background:var(--energy)"></span><span class="emo">⚡ </span><b>Енергія</b>: відключення світла або підвищення зеленого тарифу</li>
   </ul>
   <p>Частина карток «Витрата» — не удар долі, а <b>бажання</b>: смартфон, відпустка, авто в кредит. Їх можна купити зараз, почекати (наступного разу на 20 % дешевше) або сказати «не треба». У Звіті є перемикач <b>«Плати собі першому»</b>: 10 % кожної зарплати автоматично йдуть у депозит — так виглядає звичка, яка робить людей заможними.</p>
@@ -653,7 +698,7 @@ body.escaping .toasts{opacity:0;transition:opacity .2s}
   <p><b>Малі</b>: акції, облігації, кімнати, гаражі, кіоски, паркомісця. <b>Великі</b>: квартири, будинки, бізнес від 100 000 ₴ внеску. На картці головне — <b>грошовий потік</b> і блок «Для вас»: що зміниться саме у вас після купівлі.</p>
   <p>Відмовились від прибуткової угоди — вона переходить далі по колу: суперник може її підхопити. І навпаки: те, що відкинули інші, запропонують вам.</p>
   <h2>Ринок</h2>
-  <p>Покупці на ваш тип активу (ціна мінус залишок іпотеки), біржові новини, премії, повернення податків, подорожчання життя. Є картки-вибори: <b>курси</b> (місяць витрат за +10% до зарплати назавжди), <b>підробіток</b> (зарплата зараз за пропуск ходу) і <b>ремонт</b> (5% вартості житла за +50% потоку).</p>
+  <p>Покупці на ваш тип активу (ціна мінус залишок іпотеки), біржові новини, премії, повернення податків, подорожчання життя, орендар, що з’їхав (об’єкт дві виплати без доходу). Є картки-вибори: <b>курси</b> (місяць витрат за +10% до зарплати назавжди), <b>підробіток</b> (зарплата зараз за пропуск ходу) і <b>ремонт</b> (5% вартості житла за +50% потоку).</p>
   <h2>Україна 2026</h2>
   <p><b>Енергія.</b> Бізнеси від мережі (кіоск, піцерія, СТО, ФОП) під час відключень втрачають місячний потік — якщо у вас немає власної генерації. Генератор, СЕС з акумулятором чи енергонезалежний будинок захищають усі ваші бізнеси й самі заробляють подвійно. Енергетик у такі місяці отримує понаднормові.</p>
   <p><b>Валюта і депозит.</b> Долари не дають потоку, але курс гуляє: купуйте по 3 800–4 300, продавайте на новинах по 5 000. Депозит і військові облігації платять щомісяця без ризику.</p>
@@ -665,7 +710,7 @@ body.escaping .toasts{opacity:0;transition:opacity .2s}
   <h2>Папери</h2>
   <p>Акції, валюту, депозит і облігації можна продати <b>будь-коли</b> у вкладці «Активи» — за поточним курсом мінус 5 % брокеру (депозит і облігації — за номіналом, без комісії). Курс оновлює кожна біржова картка. Картка з високою ціною дає продати без комісії — тому новини варто чекати, а продавати «зараз» — коли потрібен капітал на угоду.</p>
   <h2>Траса</h2>
-  <p>Поки ви в колі, зовнішня траса на полі ледь видна. Коли пасивний дохід перевищить витрати, брама на 12 годині відчиняється, фішка проходить крізь неї, і траса прокидається. Дохід у 100 разів більший за ваш пасивний. Клітинки <b>Інвестиція</b> пропонують цілі компанії, <b>Мрія</b> дозволяє купити вашу мрію. Перемога: мрія або подвоєння доходу. Податкова і піраміда забирають половину готівки.</p>
+  <p>Поки ви в колі, зовнішня траса на полі ледь видна. Коли пасивний дохід перевищить витрати, брама на 12 годині відчиняється, фішка проходить крізь неї, і траса прокидається. Дохід у 100 разів більший за ваш пасивний. Клітинки <b>Інвестиція</b> пропонують цілі компанії (а іноді — падіння ринку або партнера, що кличе в справу не по кишені: половину платите зараз, половину — з доходів траси), <b>Мрія</b> дозволяє купити вашу мрію. Перемога: мрія або зростання доходу траси у 2,5 раза інвестиціями. Податкова і піраміда забирають половину готівки.</p>
   <h2>Виклик дня</h2>
   <p>Одна професія і однакові картки для всіх сьогодні. Мета — вийти з кола за найменшу кількість ходів. Гра пам’ятає найкращий результат дня, рекорд і серію днів.</p>
   <h2>Керування</h2>
@@ -715,28 +760,28 @@ RAT[21]='energy';
 const FAST = ['income','invest','invest','dream','invest','charity','income','invest','dream','invest','audit','invest','income','invest','dream','invest'];
 
 const LOAN_STEP = 10000, LOAN_RATE = 0.10, MAX_CHILDREN = 3, CHARITY_TURNS = 3,
-      DOWNSIZE_SKIP = 2, BANKRUPT_SKIP = 2, DISTRESS = 0.5, STARTUP_PAY = 1500000,
-      FAST_MULT = 100, MAX_LOG = 300;
+      DOWNSIZE_SKIP = 1, BANKRUPT_SKIP = 2, DISTRESS = 0.5, STARTUP_PAY = 1500000,
+      FAST_MULT = 100, DREAM_K = 2.2, DOUBLE_K = 1.5, FAST_SHOCK = 0.7, FAST_SHOCK_PAYDAYS = 3, IDLE_PAYDAYS = 2, MAX_LOG = 300;
 
 /* ---------- Професії (₴/міс) ---------- */
 const PROFESSIONS = [
-  {id:'janitor',  name:'Двірник',            salary:18000,  savings:7000,  pay:{taxes:3200, mortgage:2500, edu:0,    car:800,  card:800,  other:4200,  child:900},  liab:{mortgage:250000,  edu:0,       car:50000,  card:30000},  desc:'Невелика зарплата, але й витрати маленькі. Найкоротший шлях до свободи.'},
-  {id:'teacher',  name:'Вчитель',            salary:25000,  savings:8000,  pay:{taxes:4500, mortgage:4000, edu:500,  car:1000, card:900,  other:6100,  child:1300}, liab:{mortgage:400000,  edu:60000,   car:60000,  card:35000},  desc:'Стабільно, скромно, з освітнім кредитом за плечима.'},
-  {id:'nurse',    name:'Медсестра',          salary:27000,  savings:9000,  pay:{taxes:5000, mortgage:4500, edu:300,  car:1000, card:900,  other:6300,  child:1400}, liab:{mortgage:450000,  edu:40000,   car:60000,  card:35000},  desc:'Нічні зміни і невелика іпотека.'},
-  {id:'mechanic', name:'Автомеханік',        salary:30000,  savings:10000, pay:{taxes:5400, mortgage:4500, edu:0,    car:1200, card:1000, other:6900,  child:1500}, liab:{mortgage:450000,  edu:0,       car:70000,  card:40000},  desc:'Руки золоті, кредитка — ні.'},
+  {id:'janitor',  name:'Двірник',            salary:18000,  savings:20000, pay:{taxes:3200, mortgage:2500, edu:0,    car:800,  card:800,  other:3900,  child:900},  liab:{mortgage:250000,  edu:0,       car:50000,  card:30000},  desc:'Невелика зарплата, але й витрати маленькі. Найкоротший шлях до свободи.'},
+  {id:'teacher',  name:'Вчитель',            salary:25000,  savings:30000, pay:{taxes:4500, mortgage:3500, edu:500,  car:1000, card:900,  other:5800,  child:1300}, liab:{mortgage:400000,  edu:60000,   car:60000,  card:35000},  desc:'Стабільно, скромно, з освітнім кредитом за плечима.'},
+  {id:'nurse',    name:'Медсестра',          salary:27000,  savings:20000, pay:{taxes:5000, mortgage:4500, edu:300,  car:1000, card:900,  other:5600,  child:1400}, liab:{mortgage:450000,  edu:40000,   car:60000,  card:35000},  desc:'Нічні зміни і невелика іпотека.'},
+  {id:'mechanic', name:'Автомеханік',        salary:30000,  savings:20000, pay:{taxes:5400, mortgage:4500, edu:0,    car:1200, card:1000, other:6500,  child:1500}, liab:{mortgage:450000,  edu:0,       car:70000,  card:40000},  desc:'Руки золоті, кредитка — ні.'},
   {id:'driver',   name:'Водій-далекобійник', salary:40000,  savings:12000, pay:{taxes:7400, mortgage:6000, edu:0,    car:1500, card:1200, other:9900,  child:2000}, liab:{mortgage:600000,  edu:0,       car:90000,  card:50000},  desc:'Довгі рейси, непогана зарплата.'},
   {id:'police',   name:'Поліцейський',       salary:42000,  savings:10000, pay:{taxes:8000, mortgage:6500, edu:0,    car:1800, card:1500, other:9700,  child:2100}, liab:{mortgage:650000,  edu:0,       car:100000, card:60000},  desc:'Служба, графік і іпотека на двокімнатну.'},
-  {id:'sales',    name:'Менеджер з продажу', salary:50000,  savings:10000, pay:{taxes:9800, mortgage:7500, edu:1000, car:2000, card:1500, other:11200, child:2500}, liab:{mortgage:750000,  edu:100000,  car:120000, card:60000},  desc:'Бонуси є, але й витрати ростуть разом із ними.'},
-  {id:'engineer', name:'Інженер',            salary:60000,  savings:10000, pay:{taxes:12500,mortgage:9000, edu:800,  car:2200, card:1500, other:13000, child:3000}, liab:{mortgage:900000,  edu:100000,  car:130000, card:60000},  desc:'Хороша зарплата і великий будинок у кредит.'},
+  {id:'sales',    name:'Менеджер з продажу', salary:50000,  savings:15000, pay:{taxes:9800, mortgage:7500, edu:1000, car:2000, card:1500, other:10500, child:2500}, liab:{mortgage:750000,  edu:100000,  car:120000, card:60000},  desc:'Бонуси є, але й витрати ростуть разом із ними.'},
+  {id:'engineer', name:'Інженер',            salary:60000,  savings:15000, pay:{taxes:12500,mortgage:9000, edu:800,  car:2200, card:1500, other:12000, child:3000}, liab:{mortgage:900000,  edu:100000,  car:130000, card:60000},  desc:'Хороша зарплата і великий будинок у кредит.'},
   {id:'dev',      name:'IT-розробник',       salary:95000,  savings:25000, pay:{taxes:20000,mortgage:14000,edu:1000, car:3000, card:2500, other:21500, child:4500}, liab:{mortgage:1400000, edu:100000,  car:200000, card:100000}, desc:'Висока зарплата. Але щоб вийти з кола, пасивний дохід теж має бути високим.'},
   {id:'lawyer',   name:'Юрист',              salary:110000, savings:30000, pay:{taxes:26000,mortgage:16000,edu:5000, car:3500, card:2500, other:23000, child:5500}, liab:{mortgage:1700000, edu:600000,  car:220000, card:100000}, desc:'Дорога освіта досі не виплачена.'},
-  {id:'pilot',    name:'Пілот',              salary:150000, savings:40000, pay:{taxes:36000,mortgage:20000,edu:0,    car:4500, card:10000,other:33500, child:7500}, liab:{mortgage:2200000, edu:0,       car:300000, card:400000}, desc:'Великі гроші — і велика кредитка.'},
-  {id:'doctor',   name:'Лікар',              salary:200000, savings:6000,  pay:{taxes:52000,mortgage:28000,edu:11000,car:5500, card:4000, other:43500, child:9500}, liab:{mortgage:3000000, edu:2200000, car:300000, card:150000}, desc:'Найбільша зарплата, найбільші витрати і майже нуль заощаджень.'},
-  {id:'volunteer',name:'Працівник фонду',    salary:30000,  savings:9000,  pay:{taxes:5500, mortgage:4500, edu:500,  car:1000, card:900,  other:7100,  child:1500}, liab:{mortgage:450000,  edu:40000,   car:60000,  card:35000},  desc:'Робота, що має сенс. Зарплата — як у медсестри.'},
-  {id:'farmer',   name:'Фермер',             salary:40000,  savings:20000, pay:{taxes:7000, mortgage:5000, edu:0,    car:2500, card:1500, other:11000, child:2300}, liab:{mortgage:500000,  edu:0,       car:200000, card:70000},  desc:'Сезонний дохід: влітку густо, взимку пусто.', trait:'seasonal'},
-  {id:'energy',   name:'Енергетик',          salary:50000,  savings:12000, pay:{taxes:11000,mortgage:8000, edu:500,  car:2000, card:1500, other:12500, child:2800}, liab:{mortgage:800000,  edu:60000,   car:120000, card:60000},  desc:'Дефіцитна професія: під час відключень — понаднормові.', trait:'energyPro'},
-  {id:'freelancer',name:'IT-фрилансер',      salary:75000,  savings:30000, pay:{taxes:6000, mortgage:12000,edu:0,    car:2500, card:2000, other:26000, child:4000}, liab:{mortgage:1200000, edu:0,       car:180000, card:80000},  desc:'ФОП 5%: податки малі, але дохід гуляє ±30% щомісяця.', trait:'volatile'},
-  {id:'soldier',  name:'Військовий',         salary:90000,  savings:40000, pay:{taxes:3000, mortgage:14000,edu:0,    car:3500, card:3000, other:34500, child:4000}, liab:{mortgage:1400000, edu:0,       car:200000, card:120000}, desc:'Контракт: висока зарплата зараз — але не назавжди. Будуйте пасивний дохід, поки вона є.', trait:'demob'},
+  {id:'pilot',    name:'Пілот',              salary:150000, savings:40000, pay:{taxes:36000,mortgage:20000,edu:0,    car:4500, card:7000, other:33500, child:7500}, liab:{mortgage:2200000, edu:0,       car:300000, card:280000}, desc:'Великі гроші — і велика кредитка.'},
+  {id:'doctor',   name:'Лікар',              salary:200000, savings:20000, pay:{taxes:52000,mortgage:28000,edu:8000, car:5500, card:4000, other:41000, child:9500}, liab:{mortgage:3000000, edu:1600000, car:300000, card:150000}, desc:'Найбільша зарплата, найбільші витрати і майже нуль заощаджень.'},
+  {id:'volunteer',name:'Працівник фонду',    salary:30000,  savings:12000, pay:{taxes:5500, mortgage:4500, edu:500,  car:1000, card:900,  other:7000,  child:1500}, liab:{mortgage:450000,  edu:40000,   car:60000,  card:35000},  desc:'Робота, що має сенс. Зарплата — як у медсестри.'},
+  {id:'farmer',   name:'Фермер',             salary:40000,  savings:25000, pay:{taxes:7000, mortgage:5000, edu:0,    car:2500, card:1500, other:11000, child:2300}, liab:{mortgage:500000,  edu:0,       car:200000, card:70000},  desc:'Сезонний дохід: влітку густо, взимку пусто.', trait:'seasonal'},
+  {id:'energy',   name:'Енергетик',          salary:50000,  savings:18000, pay:{taxes:11000,mortgage:8000, edu:500,  car:2000, card:1500, other:12500, child:2800}, liab:{mortgage:800000,  edu:60000,   car:120000, card:60000},  desc:'Дефіцитна професія: під час відключень — понаднормові.', trait:'energyPro'},
+  {id:'freelancer',name:'IT-фрилансер',      salary:75000,  savings:30000, pay:{taxes:6000, mortgage:12000,edu:0,    car:2500, card:2000, other:28000, child:4000}, liab:{mortgage:1200000, edu:0,       car:180000, card:80000},  desc:'ФОП 5%: податки малі, але дохід гуляє ±30% щомісяця.', trait:'volatile'},
+  {id:'soldier',  name:'Військовий',         salary:90000,  savings:30000, pay:{taxes:3000, mortgage:14000,edu:0,    car:3500, card:3000, other:38000, child:4000}, liab:{mortgage:1400000, edu:0,       car:200000, card:120000}, desc:'Контракт: висока зарплата зараз — але не назавжди. Будуйте пасивний дохід, поки вона є.', trait:'demob'},
 ];
 const TRAIT_TEXT = {seasonal:'Сезонний дохід: кожна друга зарплата ×1,5, інші ×0,5.', energyPro:'Під час відключень світла отримує понаднормові: +50% зарплати.', volatile:'Дохід фрилансера коливається від 70% до 130% щомісяця.', demob:'Звільнення означає демобілізацію: зарплата назавжди стає 65 000 ₴, «інші витрати» меншають на 18 000 ₴.'};
 
@@ -860,6 +905,9 @@ const EVENT_DEALS = [
 
 function M(group, price, text){ return {kind:'offer', group, price, text}; }
 const MARKET = [
+  {kind:'vacancy', what:'prop', text:'Орендар з’їхав. Поки знайдеться новий, об’єкт два місяці не приносить доходу.'},
+  {kind:'vacancy', what:'prop', text:'Простій між орендарями: дрібний ремонт і пошук нових мешканців. Два місяці без оренди.'},
+  {kind:'vacancy', what:'biz', text:'Зламалось обладнання. Бізнес два місяці стоїть, поки чекаєте на запчастини.'},
   M('room',260000,'Студмістечко розширюється: покупець шукає кімнати.'),
   M('garage',230000,'Забудовник скуповує гаражі під паркінг.'),
   M('apt1',1050000,'Інвестор скуповує однокімнатні квартири.'),
@@ -929,27 +977,31 @@ const MARKET = [
 
 function D(name, cost, extra){ return Object.assign({name, cost}, extra||{}); }
 const DOODAD = [
-  D('Новий смартфон',18000,{want:true}), D('Ремонт авто',7000), D('Відпустка в Карпатах',12000,{want:true}), D('Весілля друга: подарунок',4000),
-  D('Стоматолог',3500), D('Штраф за паркування',1000), D('Новий телевізор',12000,{want:true}), D('Зламалась пральна машина',9000),
+  D('Новий смартфон',18000,{want:true, wait:0.8}), D('Ремонт авто',7000), D('Відпустка в Карпатах',12000,{want:true, wait:0.7, text:'Не в сезон — на 30 % дешевше. Гори нікуди не подінуться.'}), D('Весілля друга: подарунок',4000),
+  D('Стоматолог',3500), D('Штраф за паркування',1000), D('Новий телевізор',12000,{want:true, wait:0.8}), D('Зламалась пральна машина',9000),
   D('Кафе з друзями',1500), D('Велосипед',8000), D('Абонемент у спортзал',4000),
-  D('День народження дитини',2500,{perChild:true}), D('Зимова гума',6000), D('Ресторан на річницю',2500,{want:true}),
-  D('Квитки на концерт',2000,{want:true}), D('Подарунки на свята',4000), D('Ремонт у ванній',15000), D('Собака захворіла: ветеринар',3000),
-  D('Новий автомобіль у кредит',20000,{want:true, loan:{name:'Кредит на нове авто', amount:200000, pay:4000}, text:'Перший внесок 20 000 ₴, борг 200 000 ₴, платіж 4 000 ₴/міс.'}),
-  D('Квадроцикл у кредит',10000,{want:true, loan:{name:'Кредит на квадроцикл', amount:80000, pay:1600}, text:'Перший внесок 10 000 ₴, борг 80 000 ₴, платіж 1 600 ₴/міс.'}),
-  D('Комп\u2019ютер для дитини',8000,{perChild:true}), D('Кавомашина',5000,{want:true}), D('Курси англійської',6000), D('Облаштування балкона',7000),
+  D('День народження дитини',2500,{perChild:true}), D('Зимова гума',6000), D('Ресторан на річницю',2500,{want:true, wait:0.8}),
+  D('Квитки на концерт',2000,{want:true, wait:0.8}), D('Подарунки на свята',4000), D('Ремонт у ванній',15000), D('Собака захворіла: ветеринар',3000),
+  D('Новий автомобіль у кредит',20000,{want:true, wait:0.9, loan:{name:'Кредит на нове авто', amount:200000, pay:4000}, text:'Перший внесок 20 000 ₴, борг 200 000 ₴, платіж 4 000 ₴/міс.'}),
+  D('Квадроцикл у кредит',10000,{want:true, wait:0.9, loan:{name:'Кредит на квадроцикл', amount:80000, pay:1600}, text:'Перший внесок 10 000 ₴, борг 80 000 ₴, платіж 1 600 ₴/міс.'}),
+  D('Комп\u2019ютер для дитини',8000,{perChild:true}), D('Кавомашина',5000,{want:true, wait:0.8}), D('Курси англійської',6000), D('Облаштування балкона',7000),
   D('Зарядна станція на зиму',9000), D('Вибиті шибки: нові вікна',12000), D('Повний бак',2500), D('Кава з собою щодня',1200),
-  D('Ще одна підписка',500,{want:true, monthly:500, text:'Дрібниця щомісяця. Але назавжди: +500 ₴ до «інших витрат».'}), D('Дача: насіння, інструмент, паркан',7000),
+  D('Ще одна підписка',500,{want:true, wait:0.8, monthly:500, text:'Дрібниця щомісяця. Але назавжди: +500 ₴ до «інших витрат».'}), D('Дача: насіння, інструмент, паркан',7000),
 ];
 const DOODAD_IMG = ['phone','car-repair','vacation','wedding','dentist','fine','tv','washer','cafe','bike','gym','birthday','tyres','restaurant','concert','gifts','bathroom','vet','newcar','quad','computer','coffeemachine','english','balcony','powerbank','windows','fuel','coffee','subscriptions','dacha'];
 
 const FASTDEALS = [
-  {name:'Мережа кав’ярень', cost:3000000, cf:800000}, {name:'Виноробня на Закарпатті', cost:5000000, cf:1400000},
-  {name:'Частка у футбольному клубі', cost:6000000, cf:1200000}, {name:'Готель у Карпатах', cost:9000000, cf:2600000},
-  {name:'Частка в агрохолдингу', cost:12000000, cf:3400000}, {name:'Елеватор', cost:15000000, cf:4200000},
-  {name:'Сонячна електростанція 10 МВт', cost:18000000, cf:5200000}, {name:'Мережа АЗС', cost:25000000, cf:7000000},
-  {name:'IT-компанія', cost:30000000, cf:9000000}, {name:'Бізнес-центр', cost:35000000, cf:10000000},
-  {name:'Логістична компанія', cost:40000000, cf:11500000}, {name:'Фармзавод', cost:45000000, cf:13000000},
-  {name:'Торговий центр', cost:50000000, cf:14500000}, {name:'Залізничний термінал', cost:60000000, cf:18000000},
+  {name:'Мережа кав’ярень', cost:3000000, cf:600000}, {name:'Виноробня на Закарпатті', cost:5000000, cf:1000000},
+  {name:'Частка у футбольному клубі', cost:6000000, cf:1200000}, {name:'Готель у Карпатах', cost:9000000, cf:1800000},
+  {name:'Частка в агрохолдингу', cost:12000000, cf:2400000}, {name:'Елеватор', cost:15000000, cf:3000000},
+  {name:'Сонячна електростанція 10 МВт', cost:18000000, cf:3600000}, {name:'Мережа АЗС', cost:25000000, cf:5000000},
+  {name:'IT-компанія', cost:30000000, cf:6000000}, {name:'Бізнес-центр', cost:35000000, cf:7000000},
+  {name:'Логістична компанія', cost:40000000, cf:8000000}, {name:'Фармзавод', cost:45000000, cf:9000000},
+  {name:'Торговий центр', cost:50000000, cf:10000000}, {name:'Залізничний термінал', cost:60000000, cf:12000000},
+  {name:'Падіння ринку', event:'crash', text:'Ринки просіли. Дохід від ваших інвестицій на трасі наступні три виплати менший на 30 %.'},
+  {name:'Падіння ринку', event:'crash', text:'Паніка на біржі. Три виплати поспіль інвестиції дають на 30 % менше. Базовий дохід не чіпає.'},
+  {name:'Партнер пропонує частку', event:'partner', text:'Знайомий підприємець кличе в справу, яка вам поки не по кишені: половину платите зараз, решту — з доходів траси.'},
+  {name:'Партнер пропонує частку', event:'partner', text:'Велика справа, великий партнер: половина суми зараз, половина — з наступних виплат на трасі.'},
 ];
 
 const DREAMS = [
@@ -973,7 +1025,7 @@ function reg(list, prefix){ list.forEach((c,i)=>{ c.id = prefix+i; c.deck = pref
 reg(SMALL,'S'); reg(BIG,'B'); reg(MARKET,'M'); reg(DOODAD,'D'); reg(FASTDEALS,'F'); reg(EVENT_DEALS,'E'); EVENT_DEALS.forEach(c=>c.deck='B');
 
 /* ---------- Розрахунки ---------- */
-function passive(p){ let s=0; for(const a of p.assets){ s += a.kind==='stock' ? a.qty*(a.div||0) : (a.cf||0); } return s; }
+function passive(p){ let s=0; for(const a of p.assets){ s += a.kind==='stock' ? a.qty*(a.div||0) : (a.idle>0 ? 0 : (a.cf||0)); } return s; }
 function expenses(p){
   const L=p.liab, Y=p.pay; let s = Y.taxes + Y.other + p.children*Y.child;
   if(L.mortgage>0) s+=Y.mortgage; if(L.edu>0) s+=Y.edu; if(L.car>0) s+=Y.car; if(L.card>0) s+=Y.card;
@@ -1000,7 +1052,7 @@ function stockHolding(p, sym){ return p.assets.find(a=>a.kind==='stock' && a.sym
 
 /* рішення гравця для розбору гри після фінішу */
 function newDec(){ return {buys:0, goodBuy:0, badBuy:0, passes:0, goodPass:0, passStreak:0, buyHigh:0, buyLow:0, sellHigh:0, sellLoss:0, loanAsset:0, loanShort:0, wantBuy:0, wantWait:0, wantNo:0, shortfalls:0}; }
-function migratePlayer(p){ if(p.autoSave==null) p.autoSave=false; if(p.autoPot==null) p.autoPot=0; if(!p.wantDiscount) p.wantDiscount={}; if(!p.stats.dec) p.stats.dec=newDec(); if(!p.stats.episodes) p.stats.episodes=[]; if(p.stats.autoSaved==null){ p.stats.autoSaved=0; p.stats.autoMonths=0; } }
+function migratePlayer(p){ if(p.fastShock==null){ p.fastShock=0; p.fastDebt=0; } if(p.autoSave==null) p.autoSave=false; if(p.autoPot==null) p.autoPot=0; if(!p.wantDiscount) p.wantDiscount={}; if(!p.stats.dec) p.stats.dec=newDec(); if(!p.stats.episodes) p.stats.episodes=[]; if(p.stats.autoSaved==null){ p.stats.autoSaved=0; p.stats.autoMonths=0; } }
 /* ---------- Гра ---------- */
 class Game {
   constructor(cfg, seed){
@@ -1021,9 +1073,9 @@ class Game {
         idx:i, name:(pc.name||'').trim() || (pc.isBot ? 'Бот '+(i+1) : 'Гравець '+(i+1)), isBot:!!pc.isBot, style:pc.style||'normal', prof:prof.id, profName:prof.name,
         salary:prof.salary, pay:Object.assign({}, prof.pay), liab:Object.assign({loan:0, extra:[]}, prof.liab),
         cash:prof.savings, children:0, assets:[], pos:0, track:'rat', skip:0, charity:0, hist:[], flags:{}, trait:prof.trait||null, reserve:0, insured:0, demobbed:false,
-        dream:dream.id, dreamName:dream.name, dreamPrice:Math.round(baseExp*FAST_MULT*dream.mult/100000)*100000,
+        dream:dream.id, dreamName:dream.name, dreamPrice:Math.round(baseExp*FAST_MULT*dream.mult*DREAM_K/100000)*100000,
         fastBase:0, fastCf:0, fastAssets:[], escapedTurn:0, escapedRound:0, escTurns:0, bankrupt:0, won:false,
-        autoSave: !!pc.isBot && (pc.style||'normal')!=='bold', autoPot:0, wantDiscount:{},
+        autoSave: !!pc.isBot && (pc.style||'normal')!=='bold', autoPot:0, wantDiscount:{}, fastShock:0, fastDebt:0,
         stats:{turns:0, paydays:0, deals:0, sold:0, doodads:0, loansTaken:0, autoSaved:0, autoMonths:0, dec:newDec(), episodes:[]},
       });
     });
@@ -1095,8 +1147,12 @@ class Game {
       /* «плати собі першому»: частка зарплати йде в скарбничку, а з неї — у депозит */
       if(p.autoSave && cf>0){ const amt=Math.round(p.salary*AUTO_SAVE_PCT/100)*100; if(amt>0 && p.cash-amt>=0){ p.cash-=amt; p.autoPot+=amt; p.stats.autoSaved+=amt; p.stats.autoMonths++; let bought=0; while(p.autoPot>=DEP_PRICE){ p.autoPot-=DEP_PRICE; bought++; } if(bought) this.addHolding(p,'DEP',bought,DEP_PRICE); this.log(`🐷 ${p.name}: відкладено ${fmt(amt)}${bought?` → депозит +${bought} (+${fmt(bought*STOCKS.DEP.div)}/міс)`:''}.`, p.idx); this.emit({type:'autosave', player:p.idx, amount:amt, bought, pot:p.autoPot}); } }
       else if(!p.autoSave && p.cash > expenses(p)*4 && p.stats.paydays>=3){ const idle=Math.floor(p.cash/DEP_PRICE)*STOCKS.DEP.div; if(idle>0) this.nudge(p,'idle',`${fmt(p.cash)} лежать без діла. Навіть на депозиті це +${fmt(idle)}/міс. Увімкніть «Плати собі першому» у Звіті або шукайте угоду.`); }
-      p.hist.push({t:this.s.turn, pa:passive(p), ex:expenses(p), cash:p.cash}); if(p.hist.length>240) p.hist.splice(0,1); }
-    else { const inc=fastIncome(p); p.cash+=inc; p.stats.paydays++; this.emit({type:'payday', player:p.idx, amount:inc, step, fast:true}); this.log(`${p.name}: дохід на трасі +${fmt(inc)}.`, p.idx); }
+      p.hist.push({t:this.s.turn, pa:passive(p), ex:expenses(p), cash:p.cash}); if(p.hist.length>240) p.hist.splice(0,1);
+      for(const a of p.assets) if(a.idle>0){ a.idle--; if(!a.idle) this.log(`${p.name}: ${a.name} знову приносить дохід.`, p.idx); } }
+    else { let inc=fastIncome(p); let shock=0, debt=0;
+      if(p.fastShock>0){ shock=Math.round(p.fastCf*(1-FAST_SHOCK)); inc-=shock; p.fastShock--; }
+      if(p.fastDebt>0){ debt=Math.min(p.fastDebt, Math.floor(inc/2)); p.fastDebt-=debt; inc-=debt; }
+      p.cash+=inc; p.stats.paydays++; this.emit({type:'payday', player:p.idx, amount:inc, step, fast:true, shock, debt}); this.log(`${p.name}: дохід на трасі +${fmt(inc)}${shock?` (ринок просів: −${fmt(shock)})`:''}${debt?` (партнеру: −${fmt(debt)})`:''}.`, p.idx); }
   }
   /* віхи — маленькі перемоги по дорозі */
   checkMilestones(){
@@ -1123,17 +1179,22 @@ class Game {
     const s=this.s;
     switch(cell){
       case 'deal': s.queue.push({type:'dealChoice', player:p.idx}); break;
-      case 'pay': case 'income': break;
+      case 'pay': { if(p.track!=='rat') break; const r=this.rnd(); let amt, why; if(r<0.5){ amt=Math.round(p.salary*0.08/100)*100; why='Премія за квартал'; } else if(r<0.8){ amt=Math.round(expenses(p)*0.03/100)*100; why='Кешбек з картки'; } else { amt=Math.round(p.salary*0.04/100)*100; why='Друг повернув борг'; }
+        if(amt>0){ p.cash+=amt; this.log(`${p.name}: ${why.toLowerCase()} +${fmt(amt)}.`, p.idx); this.emit({type:'bonus', player:p.idx, amount:amt, why}); } break; }
+      case 'income': break;
       case 'market': this.market(p); break;
       case 'doodad': this.doodad(p); break;
       case 'baby': if(p.children<MAX_CHILDREN){ p.children++; this.log(`👶 ${p.name}: народилась дитина (${p.children}). Витрати +${fmt(p.pay.child)}/міс.`, p.idx); this.emit({type:'baby', player:p.idx, n:p.children, cost:p.pay.child}); } else { this.log(`${p.name}: дітей уже троє, більше не буде.`, p.idx); this.emit({type:'info', text:'Дітей уже троє. Більше не буде.'}); } break;
       case 'charity': s.queue.push({type:'charity', player:p.idx, cost: Math.round((p.track==='rat'?income(p):fastIncome(p))*0.1)}); break;
       case 'downsize': { let e=expenses(p); const sh=this.useReserve(p, e); e-=sh.used; p.cash-=e; p.skip=DOWNSIZE_SKIP; let demob=false;
         if(p.trait==='demob' && !p.demobbed){ p.demobbed=true; p.salary=65000; p.pay.other=Math.max(5000, p.pay.other-18000); demob=true; }
-        this.log(`📉 ${p.name}: ${demob?'демобілізація — зарплата тепер 65 000 ₴, витрати менші; ':'звільнення — '}сплачено ${fmt(e)}${sh.used?` (подушка покрила ${fmt(sh.used)})`:''}, пропуск ${DOWNSIZE_SKIP} ходів.`, p.idx);
-        this.emit({type:'downsize', player:p.idx, amount:e, shield:sh.used, back:sh.back, demob}); this.checkCash(p.idx); break; }
+        this.log(`📉 ${p.name}: ${demob?'демобілізація — зарплата тепер 65 000 ₴, витрати менші; ':'звільнення — '}сплачено ${fmt(e)}${sh.used?` (подушка покрила ${fmt(sh.used)})`:''}, пропуск ${DOWNSIZE_SKIP} ходу.`, p.idx);
+        this.emit({type:'downsize', player:p.idx, amount:e, shield:sh.used, back:sh.back, demob}); s.queue.push({type:'jobless', player:p.idx, demob}); this.checkCash(p.idx); break; }
       case 'energy': this.energy(p); break;
-      case 'invest': { const c=this.draw('F'); s.queue.push({type:'fastDeal', player:p.idx, card:c.id}); break; }
+      case 'invest': { const c=this.draw('F');
+        if(c.event==='crash'){ p.fastShock=FAST_SHOCK_PAYDAYS; this.log(`📉 ${p.name}: ${c.name.toLowerCase()} — інвестиції на трасі дають менше наступні ${FAST_SHOCK_PAYDAYS} виплати.`, p.idx); this.emit({type:'fastEvent', player:p.idx, card:c.id, kind:'crash', loss:Math.round(p.fastCf*(1-FAST_SHOCK))}); break; }
+        if(c.event==='partner'){ const pool=FASTDEALS.filter(f=>!f.event && f.cost>p.cash); const base=(pool.length?pool:FASTDEALS.filter(f=>!f.event)).reduce((m,f)=>!m||Math.abs(f.cost-p.cash*1.6)<Math.abs(m.cost-p.cash*1.6)?f:m, null); s.queue.push({type:'fastDeal', player:p.idx, card:c.id, partner:true, base:base.id}); break; }
+        s.queue.push({type:'fastDeal', player:p.idx, card:c.id}); break; }
       case 'dream': s.queue.push({type:'dream', player:p.idx}); break;
       case 'audit': case 'fraud': { const lost=Math.floor(p.cash/2); p.cash-=lost; const why = cell==='audit'?'Податкова перевірка':'Фінансова піраміда'; this.log(`${p.name}: ${why.toLowerCase()} — втрачено ${fmt(lost)}.`, p.idx); this.emit({type:'loss', player:p.idx, amount:lost, why}); break; }
     }
@@ -1166,6 +1227,7 @@ class Game {
     if(c.kind==='damage'||c.kind==='rentUp'||c.kind==='upgrade') return rat.some(q=>q.assets.some(a=>c.groups.includes(a.group)));
     if(c.kind==='booking') return this.cur.assets.some(a=>a.kind==='biz');
     if(c.kind==='fuel'||c.kind==='inflation') return this.rnd()<0.5;
+    if(c.kind==='vacancy') return rat.some(q=>q.assets.some(a=>a.kind===c.what && a.cf>0 && !a.idle));
     if(c.kind==='blackout') return rat.some(q=>q.assets.some(a=>GRID.includes(a.group)||POWER.includes(a.group)));
     if(c.kind==='relocation') return this.cur.cash + maxLoan(this.cur) >= 200000;
     if(c.kind==='reserve') return this.cur.reserve<=0 && this.cur.cash >= expenses(this.cur)*3;
@@ -1180,6 +1242,8 @@ class Game {
       s.quotes[c.sym]=c.price; touched.push(p.idx); s.queue.push({type:'deal', player:p.idx, card:c.id, size:'news'});
       for(let k=1;k<s.players.length;k++){ const i=(s.cur+k)%s.players.length; const q=this.pl(i); if(q.track==='rat' && stockHolding(q,c.sym)) s.queue.push({type:'stockSell', player:i, card:c.id}); }
     } else if(['course','gig','reserve','insurance','booking','donate'].includes(c.kind)){ touched.push(p.idx); s.queue.push({type:'choice', player:p.idx, card:c.id}); }
+    else if(c.kind==='vacancy'){ const hits=[]; for(const i of order){ const q=this.pl(i); if(q.track!=='rat') continue; const cand=q.assets.filter(a=>a.kind===c.what && a.cf>0 && !a.idle); if(!cand.length) continue; const a=cand[Math.floor(this.rnd()*cand.length)]; a.idle=IDLE_PAYDAYS; touched.push(i); hits.push({player:i, name:a.name, cf:a.cf}); this.log(`${q.name}: ${c.what==='prop'?'орендар з’їхав':'простій бізнесу'} — «${a.name}» ${IDLE_PAYDAYS} виплати без доходу (−${fmt(a.cf)}/міс).`, i); }
+      this.emit({type:'vacancy', card:c.id, hits}); }
     else if(c.kind==='blackout'){ touched.push(p.idx); this.blackout(); }
     else if(c.kind==='relocation'){ touched.push(p.idx); s.queue.push({type:'deal', player:p.idx, card:EVENT_DEALS[0].id, size:'big'}); }
     else if(c.kind==='fuel'){ for(const q of s.players){ if(q.track!=='rat') continue; const amt=Math.round(c.amount*lifestyleMult(q)/100)*100; q.cash-=amt; touched.push(q.idx); this.log(`${q.name}: пальне −${fmt(amt)}.`, q.idx); this.emit({type:'loss', player:q.idx, amount:amt, why:'Пальне'}); this.checkCash(q.idx); } }
@@ -1280,9 +1344,14 @@ class Game {
         if(n){ this.log(`🔨 ${p.name}: ремонт ${n} об. за ${fmt(spent)} — потік +${fmt(gained)}/міс.`, p.idx); this.emit({type:'upgraded', player:p.idx, n, spent, gained}); } else this.log(`${p.name}: без ремонту.`, p.idx);
         this.next(); break; }
       case 'stockSell': { const c=CARDS[pd.card]; if(a.type==='sell'){ this.noteSell(p, c); this.sellStock(p, c.sym, c.price, a.qty); } this.next(); break; }
+      case 'jobless': {
+        if(a.choice==='course'){ const cost=Math.round(expenses(p)*0.5/100)*100; const add=Math.round(p.salary*0.1/100)*100; if(p.cash>=cost){ p.cash-=cost; p.salary+=add; this.log(`🎓 ${p.name}: курси за ${fmt(cost)}, поки без роботи — зарплата +${fmt(add)}/міс.`, p.idx); this.emit({type:'choiceDone', player:p.idx, text:`Час без роботи пішов у навички: зарплата тепер ${fmt(p.salary)}.`}); } }
+        else if(a.choice==='gig'){ const amt=Math.round(p.salary*0.5/100)*100; p.cash+=amt; this.log(`${p.name}: підробіток між роботами +${fmt(amt)}.`, p.idx); this.emit({type:'choiceDone', player:p.idx, text:`+${fmt(amt)} за підробіток, поки шукаєте роботу.`}); }
+        else { p.insured+=1; this.log(`${p.name}: відпочинок між роботами — наступна витрата вдвічі дешевша.`, p.idx); this.emit({type:'choiceDone', player:p.idx, text:'Видихнули. Наступна витрата коштуватиме вдвічі менше.'}); }
+        this.next(); break; }
       case 'want': { const c=CARDS[pd.card]; const d=p.stats.dec;
         if(a.choice==='buy'){ d.wantBuy++; delete p.wantDiscount[c.id]; this.chargeDoodad(p, c, pd.cost, true); }
-        else if(a.choice==='wait' && !pd.discounted){ d.wantWait++; p.wantDiscount[c.id]=WANT_DISCOUNT; this.log(`${p.name}: «${c.name}» — почекає; наступного разу на ${Math.round((1-WANT_DISCOUNT)*100)} % дешевше.`, p.idx); this.emit({type:'wantWait', player:p.idx, card:c.id}); }
+        else if(a.choice==='wait' && !pd.discounted){ const w=c.wait||WANT_DISCOUNT; d.wantWait++; p.wantDiscount[c.id]=w; this.log(`${p.name}: «${c.name}» — почекає; наступного разу на ${Math.round((1-w)*100)} % дешевше.`, p.idx); this.emit({type:'wantWait', player:p.idx, card:c.id, pct:Math.round((1-w)*100)}); }
         else { d.wantNo++; this.log(`${p.name}: «${c.name}» — не треба. Заощаджено ${fmt(pd.cost)}.`, p.idx); this.emit({type:'wantNo', player:p.idx, card:c.id, amount:pd.cost}); }
         this.next(); break; }
       case 'market': {
@@ -1302,8 +1371,13 @@ class Game {
       case 'manage': { this.next(); break; }
       case 'fastDeal': {
         const c=CARDS[pd.card];
+        if(pd.partner){ const b=CARDS[pd.base]; const half=Math.round(b.cost/2);
+          if(a.type==='buy' && p.cash>=half){ p.cash-=half; p.fastDebt+=b.cost-half; p.fastCf+=b.cf; p.fastAssets.push({name:b.name+' (з партнером)', cost:b.cost, cf:b.cf}); p.stats.deals++; this.log(`🤝 ${p.name}: частка в «${b.name}» — ${fmt(half)} зараз, ${fmt(b.cost-half)} партнеру з доходів траси; +${fmt(b.cf)} доходу.`, p.idx); this.emit({type:'bought', player:p.idx, name:b.name});
+            if(p.fastCf >= p.fastBase*DOUBLE_K){ this.win(p, `дохід на трасі зріс у ${(1+DOUBLE_K).toString().replace('.',',')} раза`); return this.ev; } }
+          else this.log(`${p.name}: відмовляється від частки в «${b.name}».`, p.idx);
+          this.next(); break; }
         if(a.type==='buy' && p.cash>=c.cost){ p.cash-=c.cost; p.fastCf+=c.cf; p.fastAssets.push({name:c.name, cost:c.cost, cf:c.cf}); p.stats.deals++; this.log(`🏭 ${p.name}: купівля — ${c.name} за ${fmt(c.cost)}, +${fmt(c.cf)} доходу на трасі.`, p.idx); this.emit({type:'bought', player:p.idx, name:c.name});
-          if(p.fastCf >= p.fastBase){ this.win(p, `подвоєно дохід на трасі`); return this.ev; } }
+          if(p.fastCf >= p.fastBase*DOUBLE_K){ this.win(p, `дохід на трасі зріс у ${(1+DOUBLE_K).toString().replace('.',',')} раза`); return this.ev; } }
         else this.log(`${p.name}: пропуск — ${c.name}.`, p.idx);
         this.next(); break; }
       case 'dream': {
@@ -1339,6 +1413,7 @@ class Game {
     const t=dealTerms(c,p);
     let loan=0; if(t.down>p.cash){ loan=roundStep(t.down-p.cash); if(!a.loan || !loanAllowed(p, loan)){ this.emit({type:'error', text:`Бракує ${fmt(t.down-p.cash)} на перший внесок.`}); return false; } this.bank(p,{type:'loan', amount:loan}); }
     p.cash-=t.down; p.assets.push({id:s.nextAsset++, kind:c.kind, group:c.group, name:c.name, cost:c.cost, down:t.down, mortgage:t.mortgage, cf:t.cf, range:c.range});
+    p.stats.maxAssets=Math.max(p.stats.maxAssets||0, p.assets.length);
     p.stats.deals++; this.log(`🏠 ${p.name}: купівля — ${c.name} за ${fmt(c.cost)} (внесок ${fmt(t.down)}), ${t.cf>=0?'+':''}${fmt(t.cf)}/міс.`, p.idx); this.emit({type:'bought', player:p.idx, name:c.name});
     return true;
   }
@@ -1381,7 +1456,7 @@ function fmt(n){ n=Math.round(n); const sign=n<0?'−':''; const s=Math.abs(n).t
 
 return { Game, PROFESSIONS, DREAMS, GROUPS, STOCKS, CARDS, SMALL, BIG, MARKET, DOODAD, FASTDEALS, EVENT_DEALS, RAT, FAST, CELL_NAMES, LIAB_NAMES, TRAIT_TEXT, POWER, GRID, DOODAD_IMG, dealTerms,
   passive, expenses, income, cashflow, fastIncome, netWorth, totalLiab, assetValue, freedomPct, loanAllowed, maxLoan, roundStep, distressPrice, stockHolding, fmt, lifestyleMult, doodadCost,
-  sellNowUnit, defaultQuotes, BROKER_FEE, AUTO_SAVE_PCT, DEP_PRICE, WANT_DISCOUNT, LOAN_STEP, LOAN_RATE, MAX_CHILDREN, CHARITY_TURNS, FAST_MULT };
+  sellNowUnit, defaultQuotes, BROKER_FEE, AUTO_SAVE_PCT, DEP_PRICE, WANT_DISCOUNT, DREAM_K, DOUBLE_K, FAST_SHOCK, FAST_SHOCK_PAYDAYS, IDLE_PAYDAYS, LOAN_STEP, LOAN_RATE, MAX_CHILDREN, CHARITY_TURNS, FAST_MULT };
 })();
 if(typeof module!=='undefined') module.exports = ENGINE;
 </script>
@@ -1422,7 +1497,8 @@ function decide(g){
       if(p.style==='bold') return {choice: p.cash-cost >= ex*0.5 ? 'buy' : (pd.discounted?'no':'wait')};
       if(p.style==='normal') return {choice: !pd.discounted ? 'wait' : (free(p) >= cost ? 'buy' : 'no')};
       return {choice: pd.discounted && free(p) >= cost*4 && g.rnd()<0.3 ? 'buy' : 'no'}; }
-    case 'fastDeal': { const c=E.CARDS[pd.card]; return {type: (p.cash - c.cost >= 0 && c.cf/c.cost >= 0.15) ? 'buy' : 'pass'}; }
+    case 'fastDeal': { if(pd.partner){ const b=E.CARDS[pd.base]; const half=Math.round(b.cost/2); return {type: (p.cash>=half && b.cf/b.cost>=0.2 && p.style!=='safe') ? 'buy' : 'pass'}; } const c=E.CARDS[pd.card]; return {type: (p.cash - c.cost >= 0 && c.cf/c.cost >= 0.15) ? 'buy' : 'pass'}; }
+    case 'jobless': { const cost=Math.round(E.expenses(p)*0.5/100)*100; if(p.style==='bold') return {choice:'gig'}; if(p.cash >= cost + reserve(p)) return {choice:'course'}; return {choice: p.cash < reserve(p) ? 'gig' : 'rest'}; }
     case 'dream': return {type: p.cash >= p.dreamPrice ? 'buy' : 'pass'};
     default: return null;
   }
@@ -1549,6 +1625,8 @@ const CONTENT = {
     {t:'Складний відсоток', d:'Відсотки на відсотки. Повільно на початку, потім стрімко.', g:'Реінвестуйте потік у нові активи — і кожен наступний виходить легше за попередній.'},
     {t:'Інфляція стилю життя', d:'Звичка витрачати більше щоразу, як зростає дохід.', g:'Множник стилю життя робить витрати дорожчими для високих зарплат.'},
     {t:'Банкрутство', d:'Нездатність платити за зобов’язаннями. Активи йдуть кредиторам.', g:'Коли немає ні готівки, ні кредиту, ні активів на продаж. Гра триває, але з нуля.'},
+    {t:'Альтернативна вартість', d:'Те, від чого ви відмовляєтесь, обираючи цей варіант. Гроші, вкладені сюди, не працюють деінде.', g:'Рядок «Замість цього» на картці угоди: скільки дав би той самий внесок на депозиті. Порівнюйте з ним, а не з нулем.'},
+    {t:'Простій', d:'Період, коли актив є, а доходу від нього немає: орендар з’їхав, обладнання зламалось.', g:'Картка ринку «Орендар з’їхав»: дві виплати без потоку від одного об’єкта. Подушка і кілька активів переживають це спокійно.'},
   ],
   /* думки перед грою — ключові ідеї книг своїми словами (book — індекс у books) */
   ideas: [
@@ -1690,7 +1768,7 @@ const CONF_MONEY=['#3ddc84','#8ff0b8','#ffd36a','#ffffff'], CONF_WIN=['#3ddc84',
 function vibrate(ms){ try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){} }
 
 /* ---------- екрани / збереження ---------- */
-function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('hidden', s.id!==id)); window.scrollTo(0,0); }
+function show(id){ if(typeof tourClear==='function') tourClear(true); document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('hidden', s.id!==id)); window.scrollTo(0,0); }
 function hasSave(){ return !!store.get(SAVE_KEY,null); }
 function save(){ if(g) store.set(SAVE_KEY, g.state()); }
 function clearSave(){ store.del(SAVE_KEY); }
@@ -1749,7 +1827,7 @@ function introSheet(){ const s=g.state(); const me=s.players.find(p=>!p.isBot)||
   const daily=s.mode==='daily'; const di=daily?dailyInfo():null;
   const html=head(daily?'Виклик дня · '+di.k:'Ваша роль','var(--money)')+(daily&&IM['ev-daily']?pic('ev-daily','wide'):pic('prof-'+me.prof,'tall'))+`<h2>${daily&&IM['prof-'+me.prof]?`<img class="av" src="${IM['prof-'+me.prof]}" alt="" style="vertical-align:-6px;margin-right:6px">`:''}${esc(me.name)} — ${esc(me.profName)}</h2><p class="flavor">${esc(prof.desc)}</p>`+
     kv([['Зарплата', fmt(me.salary)],['Витрати щомісяця', fmt(E.expenses(me))],['Грошовий потік', `+${fmt(cf)}`, 'big pos'],['Заощадження', fmt(me.cash)],['Мрія', esc(me.dreamName)+((E.DREAMS.find(d=>d.id===me.dream)||{}).community?' · для громади':'')],['Стиль життя', `×${E.lifestyleMult(me).toFixed(1).replace('.',',')} до ціни витрат`], me.trait?['Особливість', esc(E.TRAIT_TEXT[me.trait]||'')]:null])+
-    (daily?`<p>Мета: вийти з кола найму за найменшу кількість ходів. Однакові картки для всіх сьогодні.${di.today?` Ваш найкращий результат сьогодні: <b>${di.today}</b> ходів.`:''}${di.allBest?` Рекорд: <b>${di.allBest}</b>.`:''}</p>`:
+    (daily?`<p>Мета: вийти з кола найму за найменшу кількість ходів. Однакові картки для всіх сьогодні.${di.today?` Ваш найкращий результат сьогодні: <b>${di.today}</b> ходів.`:''}${di.allBest?` Рекорд: <b>${di.allBest}</b>.`:''}</p><p class="mut" style="font-size:12px;margin:10px 0 4px;letter-spacing:.1em;text-transform:uppercase">Боти вже зіграли сьогодні</p>${benchHTML(dailyBench())}`:
       `<p>Мета: щоб пасивний дохід від активів став більшим за <b>${fmt(E.expenses(me))}</b> витрат. Тоді ви виходите з кола найму на трасу.</p><p class="flavor">🐷 У Звіті є перемикач «Плати собі першому»: ${Math.round(E.AUTO_SAVE_PCT*100)} % зарплати автоматично йтимуть у депозит.</p>${rivals?`<p class="flavor">Суперники: ${rivals}</p>`:''}`);
   return infoSheet(html, false, daily?'Поїхали':'Почати');
 }
@@ -1902,15 +1980,15 @@ function reportHTML(p){
     h+=`<div class="kpis"><div><small>Потік на день зарплати</small><b class="num ${cf>=0?'pos':'negv'}">${cf>=0?'+':''}${fmt(cf)}</b></div><div><small>До свободи</small><b class="num">${pct}%</b></div><div><small>Активів</small><b class="num">${p.assets.length}</b></div></div>
       <div class="fbar"><i style="width:${pct}%"></i></div><div class="fbar-l"><span>пасивний ${fmt(pa)}</span><span>витрати ${fmt(ex)}</span></div>`;
   } else {
-    const toDream=Math.max(0,p.dreamPrice-p.cash), toDouble=Math.max(0,p.fastBase-p.fastCf);
-    h+=`<div class="kpis"><div><small>Дохід на трасі</small><b class="num pos">+${fmt(E.fastIncome(p))}</b></div><div><small>До мрії</small><b class="num">${toDream?fmt(toDream):'вистачає'}</b></div><div><small>До подвоєння</small><b class="num">${toDouble?fmt(toDouble):'готово'}</b></div></div>
+    const toDream=Math.max(0,p.dreamPrice-p.cash), toDouble=Math.max(0,p.fastBase*E.DOUBLE_K-p.fastCf);
+    h+=`<div class="kpis"><div><small>Дохід на трасі</small><b class="num pos">+${fmt(E.fastIncome(p))}</b></div><div><small>До мрії</small><b class="num">${toDream?fmt(toDream):'вистачає'}</b></div><div><small>До ×${(1+E.DOUBLE_K).toString().replace('.',',')} доходу</small><b class="num">${toDouble?fmt(toDouble):'готово'}</b></div></div>
       <div class="fbar gold"><i style="width:${Math.min(100,p.cash/p.dreamPrice*100)}%"></i></div><div class="fbar-l"><span>мрія: ${esc(p.dreamName)}</span><span>${fmt(p.dreamPrice)}</span></div>`;
   }
   if(chips.length) h+=`<div class="chips">${chips.map(c=>`<span>${c}</span>`).join('')}</div>`;
   if(p.trait) h+=`<div class="trait">${esc(E.TRAIT_TEXT[p.trait]||'')}</div>`;
   if(p.track==='rat') h+=`<div class="auto">${p.isBot?`<span class="pig">${p.autoSave?'🐷':'—'}</span>`:`<label class="switch"><input type="checkbox" id="autosave" ${p.autoSave?'checked':''} ${can?'':'disabled'}><i></i></label>`}<div class="t"><b>Плати собі першому</b><small>${Math.round(E.AUTO_SAVE_PCT*100)} % зарплати щомісяця автоматично йдуть у депозит${p.autoPot?` · у скарбничці ${fmt(p.autoPot)}`:''}${p.stats.autoSaved?` · за гру відкладено ${fmt(p.stats.autoSaved)}`:''}${!p.isBot&&!can?' · перемикається у ваш хід':''}</small></div></div>`;
   h+=`</div>`;
-  if(p.track==='fast') h+=`<div class="ledger"><h3>Траса</h3>`+row('Базовий дохід', fmt(p.fastBase), {small:'пасивний дохід × 100 за кожну клітинку доходу'})+row('Інвестиції на трасі', `+${fmt(p.fastCf)}`, {small:p.fastAssets.length?`${p.fastAssets.length} об.`:'поки немає', vcls:p.fastCf>0?'pos':''})+row('Разом за клітинку', fmt(E.fastIncome(p)), {cls:'total', vcls:'pos'})+`</div>`;
+  if(p.track==='fast') h+=`<div class="ledger"><h3>Траса</h3>`+row('Базовий дохід', fmt(p.fastBase), {small:'пасивний дохід × 100 за кожну клітинку доходу'})+row('Інвестиції на трасі', `+${fmt(p.fastCf)}`, {small:p.fastAssets.length?`${p.fastAssets.length} об. · перемога, коли це ≥ ${fmt(p.fastBase*E.DOUBLE_K)}`:'поки немає', vcls:p.fastCf>0?'pos':''})+(p.fastShock>0?row('Падіння ринку', `−${fmt(Math.round(p.fastCf*(1-E.FAST_SHOCK)))}`, {small:`ще ${p.fastShock} виплат${p.fastShock===1?'а':'и'} інвестиції дають на ${Math.round((1-E.FAST_SHOCK)*100)} % менше`, vcls:'negv'}):'')+(p.fastDebt>0?row('Борг партнеру', fmt(p.fastDebt), {small:'гаситься половиною кожної виплати на трасі', vcls:'negv'}):'')+row('Разом за клітинку', fmt(E.fastIncome(p)), {cls:'total', vcls:'pos'})+`</div>`;
   h+=`<div class="ledger"><h3>Доходи щомісяця</h3>`+row('Зарплата', fmt(p.salary))+row('Пасивний дохід', fmt(pa), {small:p.assets.length?`${p.assets.length} актив${p.assets.length===1?'':p.assets.length<5?'и':'ів'} · покриває ${pct}% витрат`:'активів поки немає', vcls:pa>0?'pos':''})+row('Разом', fmt(inc), {cls:'total'})+`</div>`;
   h+=`<div class="ledger"><h3>Витрати щомісяця</h3>`+row('Податки', fmt(p.pay.taxes));
   if(L.mortgage>0) h+=row('Іпотека на житло', fmt(p.pay.mortgage));
@@ -1947,7 +2025,7 @@ function assetsHTML(p){
     if(a.kind==='stock'){ const fixed=a.range[0]===a.range[1]; const unit=E.sellNowUnit(a.sym, quotes); const q=quotes[a.sym]||a.price; const pnl=(unit-a.price)*a.qty; const d=a.div?`+${fmt(a.qty*a.div)}/міс`:'без дивідендів';
       return `<div class="aitem"><div class="ico">${thumb('stock-'+a.sym.toLowerCase(), a.div?'📜':'📈')}</div><div class="t"><b>${esc(a.name)}</b><small>${a.qty} шт. по ${fmt(a.price)} · ${fixed?'ціна фіксована':`курс ${fmt(q)}`}</small></div><div class="cf ${a.div?'pos':'mut'}">${d}</div>${can?`<div class="acts"><span class="mut" style="font-size:12px;flex:1;align-self:center">${fixed?`повернути можна будь-коли: ${fmt(unit*a.qty)}`:`продаж зараз по ${fmt(unit)} → <span class="${pnl>=0?'pos':'negv'}">${pnl>=0?'+':''}${fmt(pnl)}</span>`}</span><button class="btn sm" data-sellnow="${a.sym}">Продати</button></div>`:''}</div>`; }
     const mort=a.mortgage>0?`іпотека ${fmt(a.mortgage)}`:'без боргу';
-    return `<div class="aitem"><div class="ico">${thumb('deal-'+a.group, KIND_ICO[a.kind]||'🏠')}</div><div class="t"><b>${esc(a.name)}</b><small>внесок ${fmt(a.down)} · ${mort}${a.range&&a.range[1]?` · покупці платять ${fmt(a.range[0])}–${fmt(a.range[1])}`:''}${a.upgraded?' · після ремонту':''}</small></div><div class="cf ${a.cf>0?'pos':a.cf<0?'negv':'mut'}">${a.cf>0?'+':''}${fmt(a.cf)}/міс</div></div>`;
+    return `<div class="aitem"><div class="ico">${thumb('deal-'+a.group, KIND_ICO[a.kind]||'🏠')}</div><div class="t"><b>${esc(a.name)}</b><small>внесок ${fmt(a.down)} · ${mort}${a.range&&a.range[1]?` · покупці платять ${fmt(a.range[0])}–${fmt(a.range[1])}`:''}${a.upgraded?' · після ремонту':''}${a.idle>0?` · <span class="negv">простій: ще ${a.idle} виплат${a.idle===1?'а':'и'}</span>`:''}</small></div><div class="cf ${a.idle>0?'mut':a.cf>0?'pos':a.cf<0?'negv':'mut'}">${a.idle>0?'0':(a.cf>0?'+':'')+fmt(a.cf)}/міс</div></div>`;
   });
   const fastItems=p.fastAssets.map((a,i)=>`<div class="aitem"><div class="ico">${thumb('ft-'+FT_IMG[E.FASTDEALS.findIndex(f=>f.name===a.name)], '🏭')}</div><div class="t"><b>${esc(a.name)}</b><small>куплено за ${fmt(a.cost)}</small></div><div class="cf pos">+${fmt(a.cf)}</div></div>`);
   let h=`<div class="alist">`;
@@ -2003,7 +2081,7 @@ function sheetOpen(html){ const sh=$('#sheet'); sh.innerHTML=html; sh.classList.
 function sheetClose(){ const sh=$('#sheet'); sh.classList.remove('show'); $('#backdrop').classList.remove('show'); setTimeout(()=>{ if(!sh.classList.contains('show')) sh.innerHTML=''; }, 320); }
 function who(p){ return `<span class="sh-who"><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${HEX[p.idx]};margin-right:5px;vertical-align:middle"></i>${esc(p.name)}</span>`; }
 function head(type, color, p){ return `<div class="sh-type" style="color:${color}"><i style="background:${color}"></i>${type}${p?who(p):''}</div>`; }
-function kv(pairs){ return `<div class="kv">`+pairs.filter(Boolean).map(([k,v,cls])=>`<span>${k}</span><b class="${cls||''}">${v}</b>`).join('')+`</div>`; }
+function kv(pairs){ return `<div class="kv">`+pairs.filter(Boolean).map(([k,v,cls])=>`<span>${TERM_MAP[k]?`<span class="tt" data-term="${TERM_MAP[k]}">${k}</span>`:k}</span><b class="${cls||''}">${v}</b>`).join('')+`</div>`; }
 function cfText(cf){ return `${cf>=0?'+':''}${fmt(cf)}/міс`; }
 function payback(c){ if(!c.down||c.cf<=0) return c.cf<0?'ніколи — актив збитковий':'немає доходу'; const m=Math.ceil(c.down/c.cf); return m>=24?`${(m/12).toFixed(1).replace('.',',')} р.`:`${m} міс.`; }
 /* «для вас»: що зміниться після купівлі */
@@ -2055,14 +2133,20 @@ function showPendingSheet(){
       const q=$('#q'); $('#sheet').querySelector('[data-q="all"]').onclick=()=>q.value=h.qty; $('#sheet').querySelector('[data-q="half"]').onclick=()=>q.value=Math.max(1,Math.floor(h.qty/2));
       $('#sh-sell').onclick=()=>{ const n=Math.min(h.qty, Math.max(1, +q.value|0)); sheetClose(); doAct({type:'sell', qty:n}); }; $('#sh-pass').onclick=()=>{ sheetClose(); doAct({type:'pass'}); }; break; }
     case 'market': marketSheet(pd, p); break;
+    case 'jobless': { const cost=Math.round(E.expenses(p)*0.5/100)*100; const add=Math.round(p.salary*0.1/100)*100; const gig=Math.round(p.salary*0.5/100)*100;
+      sheetOpen(head(pd.demob?'Після повернення':'Без роботи','var(--downsize)',p)+pic(pd.demob&&IM['ev-demob']?'ev-demob':'mk-course')+`<h2>Що робите, поки без роботи?</h2><p class="flavor">Один хід ви пропускаєте в будь-якому разі. Питання — чим його наповнити.</p>`+tip('jobless','Вимушена пауза — найдешевший час для навчання: витрат на курси вдвічі менше, ніж зазвичай. Але якщо готівки обмаль — спочатку гроші.')+`<div class="sh-actions">
+        <button class="opt" id="j-course" ${p.cash>=cost?'':'disabled'}>${thumb('mk-course','🎓')}<span><b>Курси за ${fmt(cost)}</b><small>зарплата +${fmt(add)}/міс назавжди · окупність ${Math.ceil(cost/add)} міс.${p.cash<cost?' · бракує грошей':''}</small></span></button>
+        <button class="opt" id="j-gig">${thumb('mk-gig','🧰')}<span><b>Підробіток: +${fmt(gig)}</b><small>гроші зараз, навичок — нуль</small></span></button>
+        <button class="opt" id="j-rest">${thumb('ch-insurance','☂️')}<span><b>Відпочити</b><small>наступна витрата вдвічі дешевша</small></span></button></div>`);
+      $('#j-course').onclick=()=>{ sheetClose(); doAct({type:'jobless', choice:'course'}); }; $('#j-gig').onclick=()=>{ sheetClose(); doAct({type:'jobless', choice:'gig'}); }; $('#j-rest').onclick=()=>{ sheetClose(); doAct({type:'jobless', choice:'rest'}); }; break; }
     case 'want': { const c=E.CARDS[pd.card]; const pa=E.passive(p); const months=pa>0?Math.ceil(pd.cost/pa):null; const mon=c.monthly?Math.round(c.monthly*E.lifestyleMult(p)/100)*100:0;
-      sheetOpen(head('Бажання','var(--doodad)',p)+pic(cardImg(c))+`<h2>${esc(c.name)}</h2><p class="flavor">${esc(c.text||'Хочеться. Питання лише — чи саме зараз.')}</p>`+kv([['Ціна', fmt(pd.cost)+(pd.discounted?' · −20 % за терпіння':''), 'big negv'], mon?['Назавжди до витрат', `+${fmt(mon)}/міс · за рік ${fmt(mon*12)}`, 'negv']:null, c.loan?['У кредит', `борг ${fmt(c.loan.amount)} · ${fmt(c.loan.pay)}/міс`, 'negv']:null, ['Пасивний дохід покриє це', months?`за ${months} міс.`:'поки ніколи: активів немає'], ['Готівка після купівлі', fmt(p.cash-pd.cost), p.cash-pd.cost<0?'negv':'']])+tip('want','Багаті купують бажання з потоку, а не із зарплати. Почекати — отримати те саме дешевше. Відмовитись — лишити гроші працювати.')+`<div class="sh-actions"><button class="btn primary" id="w-buy" ${p.cash>=pd.cost?'':'disabled'}>Купити зараз</button>${pd.discounted?'':`<button class="btn" id="w-wait">Почекати — наступного разу на 20 % дешевше</button>`}<button class="btn ghost" id="w-no">Не треба</button></div>`);
+      sheetOpen(head('Бажання','var(--doodad)',p)+pic(cardImg(c))+`<h2>${esc(c.name)}</h2><p class="flavor">${esc(c.text||'Хочеться. Питання лише — чи саме зараз.')}</p>`+kv([['Ціна', fmt(pd.cost)+(pd.discounted?` · −${Math.round((1-(c.wait||E.WANT_DISCOUNT))*100)} % за терпіння`:''), 'big negv'], mon?['Назавжди до витрат', `+${fmt(mon)}/міс · за рік ${fmt(mon*12)}`, 'negv']:null, c.loan?['У кредит', `борг ${fmt(c.loan.amount)} · ${fmt(c.loan.pay)}/міс`, 'negv']:null, ['Пасивний дохід покриє це', months?`за ${months} міс.`:'поки ніколи: активів немає'], ['Готівка після купівлі', fmt(p.cash-pd.cost), p.cash-pd.cost<0?'negv':'']])+tip('want','Багаті купують бажання з потоку, а не із зарплати. Почекати — отримати те саме дешевше. Відмовитись — лишити гроші працювати.')+`<div class="sh-actions"><button class="btn primary" id="w-buy" ${p.cash>=pd.cost?'':'disabled'}>Купити зараз</button>${pd.discounted?'':`<button class="btn" id="w-wait">Почекати — наступного разу на ${Math.round((1-(c.wait||E.WANT_DISCOUNT))*100)} % дешевше</button>`}<button class="btn ghost" id="w-no">Не треба</button></div>`);
       $('#w-buy').onclick=()=>{ sheetClose(); doAct({type:'want', choice:'buy'}); }; const ww=$('#w-wait'); if(ww) ww.onclick=()=>{ sheetClose(); doAct({type:'want', choice:'wait'}); }; $('#w-no').onclick=()=>{ sheetClose(); doAct({type:'want', choice:'no'}); }; break; }
     case 'charity': sheetOpen(head('Благодійність','var(--charity)',p)+pic('cell-charity','icon')+`<h2>Пожертвувати ${fmt(pd.cost)}?</h2><p>Це 10% вашого доходу. Натомість наступні ${E.CHARITY_TURNS} ходи ви обираєте: один кубик чи два, і рухаєтесь швидше до днів зарплати.</p>${p.cash<pd.cost?`<p class="warn">Не вистачає готівки.</p>`:''}<div class="sh-actions"><button class="btn primary" id="sh-yes" ${p.cash<pd.cost?'disabled':''}>Пожертвувати</button><button class="btn ghost" id="sh-no">Ні, дякую</button></div>`);
       $('#sh-yes').onclick=()=>{ sheetClose(); doAct({type:'charity', yes:true}); }; $('#sh-no').onclick=()=>{ sheetClose(); doAct({type:'charity', yes:false}); }; break;
     case 'shortfall': shortfallSheet(p); break;
-    case 'fastDeal': { const c=E.CARDS[pd.card]; const ok=p.cash>=c.cost; const after=p.fastCf+c.cf;
-      sheetOpen(head('Інвестиція на трасі','var(--deal)',p)+pic(cardImg(c))+`<h2>${esc(c.name)}</h2>`+kv([['Ціна', fmt(c.cost), 'big'],['Дохід на трасі', `+${fmt(c.cf)}`, 'big pos'],['Прибутковість', `${Math.round(c.cf/c.cost*100)}% за виплату`],['Після купівлі у вас', fmt(p.cash-c.cost), ok?'':'negv'],['До перемоги подвоєнням', after>=p.fastBase?'вистачить!':`ще ${fmt(p.fastBase-after)}`]])+`${ok?'':`<p class="warn">Бракує ${fmt(c.cost-p.cash)}.</p>`}<div class="sh-actions"><button class="btn primary" id="sh-buy" ${ok?'':'disabled'}>Купити</button><button class="btn ghost" id="sh-pass">Пропустити</button></div>`);
+    case 'fastDeal': { const ev=E.CARDS[pd.card]; const c=pd.partner?E.CARDS[pd.base]:ev; const price=pd.partner?Math.round(c.cost/2):c.cost; const ok=p.cash>=price; const after=p.fastCf+c.cf; const goal=p.fastBase*E.DOUBLE_K;
+      sheetOpen(head(pd.partner?'Партнер пропонує частку':'Інвестиція на трасі','var(--deal)',p)+pic(cardImg(c))+`<h2>${esc(c.name)}</h2>${pd.partner?`<p class="flavor">${esc(ev.text)}</p>`:''}`+kv([['Ціна', fmt(c.cost), pd.partner?'':'big'], pd.partner?['Зараз платите', fmt(price), 'big']:null, pd.partner?['Партнеру з доходів траси', `${fmt(c.cost-price)} · по половині кожної виплати`, 'negv']:null, ['Дохід на трасі', `+${fmt(c.cf)}`, 'big pos'],['Прибутковість', `${Math.round(c.cf/c.cost*100)}% за виплату`],['Після купівлі у вас', fmt(p.cash-price), ok?'':'negv'],[`До перемоги (дохід ×${(1+E.DOUBLE_K).toString().replace('.',',')})`, after>=goal?'вистачить!':`ще ${fmt(goal-after)}`]])+`${ok?'':`<p class="warn">Бракує ${fmt(price-p.cash)}.</p>`}<div class="sh-actions"><button class="btn primary" id="sh-buy" ${ok?'':'disabled'}>${pd.partner?'Увійти в частку':'Купити'}</button><button class="btn ghost" id="sh-pass">Пропустити</button></div>`);
       $('#sh-buy').onclick=()=>{ sheetClose(); doAct({type:'buy'}); }; $('#sh-pass').onclick=()=>{ sheetClose(); doAct({type:'pass'}); }; break; }
     case 'dream': sheetOpen(head('Мрія','var(--dream)',p)+pic('dream-'+p.dream,'wide')+`<h2>${esc(p.dreamName)}</h2><p>Ви на клітинці мрії, і грошей вистачає. Купівля мрії — це перемога.${(E.DREAMS.find(d=>d.id===p.dream)||{}).community?' Мрія для громади — тому вона дешевша за особисту.':''}</p>`+kv([['Ціна мрії', fmt(p.dreamPrice), 'big'],['У вас', fmt(p.cash)]])+`<div class="sh-actions"><button class="btn primary" id="sh-buy">Здійснити мрію</button><button class="btn ghost" id="sh-pass">Ще не час</button></div>`);
       $('#sh-buy').onclick=()=>{ sheetClose(); doAct({type:'buy'}); }; $('#sh-pass').onclick=()=>{ sheetClose(); doAct({type:'pass'}); }; break;
@@ -2089,7 +2173,7 @@ function dealSheet(pd, p, from){
   html+=tip('deal', cfv<0?'Увага: від’ємний потік. Такий «актив» щомісяця забирає гроші — це пасив у масці.':'Дивіться на потік і окупність, а не на ціну. Актив — те, що кладе гроші в кишеню щомісяця.');
   html+=`${ok?'':loanOk?`<p class="warn">Бракує ${fmt(down-p.cash)}. Банк дасть ${fmt(need)} під ${fmt(Math.round(need*E.LOAN_RATE))}/міс — потік активу після відсотків: ${cfText(cfv-Math.round(need*E.LOAN_RATE))}.</p>`:`<p class="warn">Бракує ${fmt(down-p.cash)}, і банк не дасть стільки.</p>`}
     <div class="sh-actions"><button class="btn primary" id="sh-buy" ${ok?'':'disabled'}>Купити за ${fmt(down)}</button>${loanOk?`<button class="btn accent" id="sh-loan">Узяти кредит ${fmt(need)} і купити</button>`:''}<button class="btn ghost" id="sh-pass">Відмовитись</button></div>`;
-  sheetOpen(html);
+  sheetOpen(html); tourDeal();
   $('#sh-buy').onclick=()=>{ sheetClose(); doAct({type:'buy'}); }; if(loanOk) $('#sh-loan').onclick=()=>{ sheetClose(); doAct({type:'buy', loan:true}); }; $('#sh-pass').onclick=()=>{ sheetClose(); doAct({type:'pass'}); };
 }
 function marketSheet(pd, p){
@@ -2121,10 +2205,11 @@ async function botSheet(pd, p, a){
     case 'market': { const items=pd.assets.map(id=>p.assets.find(x=>x.id===id)).filter(Boolean); html=head('Ринок','var(--market)',p)+pic(c.kind==='offer'?'deal-'+c.group:(items[0]?'deal-'+items[0].group:'mk-buyer'))+`<h2>Покупець на актив</h2><p class="flavor">${esc(c.text)}</p><p>${esc(p.name)} має: ${items.map(x=>esc(x.name)).join(', ')}.</p>`; verdict=a.type==='sell'?`Продає ${a.ids.length} об.`:'Не продає'; break; }
     case 'charity': html=head('Благодійність','var(--charity)',p)+`<h2>Пожертвувати ${fmt(pd.cost)}?</h2>`; verdict=a.yes?'Жертвує':'Відмовляється'; break;
     case 'shortfall': html=head('Не вистачає грошей','var(--neg)',p)+`<h2>Готівка ${fmt(p.cash)}</h2>`; verdict=a.type==='loan'?`Бере кредит ${fmt(a.amount)}`:a.type==='sellAsset'?`Терміново продає ${esc((p.assets.find(x=>x.id===a.id)||{}).name||'актив')}`:(a.type==='sellNow'||a.type==='redeem')?`Продає ${a.qty} шт. ${esc((E.STOCKS[a.sym]||{}).name||'')}`:'Оголошує банкрутство'; break;
-    case 'fastDeal': html=head('Інвестиція на трасі','var(--deal)',p)+pic(cardImg(c))+`<h2>${esc(c.name)}</h2>`+kv([['Ціна',fmt(c.cost)],['Дохід на трасі',`+${fmt(c.cf)}`,'pos']]); verdict=a.type==='buy'?'Купує':'Пропускає'; break;
+    case 'fastDeal': { const b=pd.partner?E.CARDS[pd.base]:c; html=head(pd.partner?'Партнер пропонує частку':'Інвестиція на трасі','var(--deal)',p)+pic(cardImg(b))+`<h2>${esc(b.name)}</h2>`+kv([['Ціна',fmt(b.cost)], pd.partner?['Зараз', fmt(Math.round(b.cost/2))]:null, ['Дохід на трасі',`+${fmt(b.cf)}`,'pos']]); verdict=a.type==='buy'?(pd.partner?'Входить у частку':'Купує'):'Пропускає'; break; }
     case 'dream': html=head('Мрія','var(--dream)',p)+pic('dream-'+p.dream,'wide')+`<h2>${esc(p.dreamName)}</h2>`+kv([['Ціна',fmt(p.dreamPrice)],['У бота',fmt(p.cash)]]); verdict=a.type==='buy'?'Здійснює мрію!':'Чекає'; break;
     case 'dealOffer': html=dealCardHTML(c,p,pd.size).replace('</h2>',`</h2><p class="flavor">${esc(g.pl(pd.from).name)} пасує — угоду пропонують ${esc(p.name)}.</p>`); verdict=a.type==='buy'?`Підхоплює угоду${a.loan?' в кредит':''}`:'Теж відмовляється'; break;
     case 'choice': { const ch=choiceInfo(c,p); html=head('Вибір','var(--charity)',p)+pic(cardImg(c))+`<h2>${ch.title}</h2><p>${esc(c.text)}</p>`; verdict=a.yes?({course:'Іде на курси',gig:'Береться за підробіток',reserve:'Відкладає подушку',insurance:'Оформляє страховку',booking:'Платить за команду',donate:'Донатить'})[c.kind]||'Погоджується':(c.kind==='booking'?'Приймає −25% потоку':'Відмовляється'); break; }
+    case 'jobless': html=head(pd.demob?'Після повернення':'Без роботи','var(--downsize)',p)+pic('mk-course')+`<h2>Що робити, поки без роботи?</h2>`; verdict=a.choice==='course'?'Іде на курси':a.choice==='gig'?'Береться за підробіток':'Відпочиває'; break;
     case 'want': html=head('Бажання','var(--doodad)',p)+pic(cardImg(c))+`<h2>${esc(c.name)}</h2>`+kv([['Ціна', fmt(pd.cost)+(pd.discounted?' · зі знижкою':'')],['Готівка', fmt(p.cash)]]); verdict=a.choice==='buy'?'Купує':a.choice==='wait'?'Почекає знижки':'Каже «не треба»'; break;
     case 'upgrade': { const items=pd.assets.map(id=>p.assets.find(x=>x.id===id)).filter(Boolean); html=head('Ремонт','var(--deal)',p)+pic(cardImg(c))+`<h2>Ремонт нерухомості</h2><p>${esc(c.text)}</p><p class="flavor">${esc(p.name)} має: ${items.map(x=>esc(x.name)).join(', ')}.</p>`; verdict=a.type==='upgrade'?`Ремонтує ${a.ids.length} об.`:'Без ремонту'; break; }
     default: return;
@@ -2143,10 +2228,10 @@ async function playEvents(evs){
     switch(ev.type){
       case 'dice': { SFX.dice(); const t0=performance.now(); while(performance.now()-t0<Math.round(480*T())){ diceShown=ev.values.map(()=>1+Math.floor(Math.random()*6)); renderCenter(); $('#center .dice').querySelectorAll('.die').forEach(d=>d.classList.add('rolling')); await wait(70); } diceShown=ev.values.slice(); renderCenter(); if(human) vibrate(15); await wait(Math.round(260*T())); break; }
       case 'move': await animateMove(ev); break;
-      case 'card': { const c=E.CARDS[ev.card]; if(ev.deck==='M'){ if(evs.some(e=>e.type==='blackout')) break; const st=g.state(); const decided = (st.pending&&['market','deal'].includes(st.pending.type)&&st.pending.card===ev.card) || st.queue.some(q=>['market','deal'].includes(q.type)&&q.card===ev.card); if(!decided){ const gain=evs.find(e=>e.type==='gain'&&e.why); const h=head('Ринок','var(--market)')+pic(cardImg(c))+`<h2>${gain?gain.why:'Подія на ринку'}</h2><p>${esc(c.text)}</p>${gain?kv([['Отримано', '+'+fmt(gain.amount), 'big pos']]):''}`; if(gain) SFX.bigcoin(); await infoSheet(h, g.cur.isBot && !anyHumanAffected(evs)); } } break; }
+      case 'card': { const c=E.CARDS[ev.card]; if(ev.deck==='M'){ if(evs.some(e=>e.type==='blackout'||e.type==='vacancy')) break; const st=g.state(); const decided = (st.pending&&['market','deal'].includes(st.pending.type)&&st.pending.card===ev.card) || st.queue.some(q=>['market','deal'].includes(q.type)&&q.card===ev.card); if(!decided){ const gain=evs.find(e=>e.type==='gain'&&e.why); const h=head('Ринок','var(--market)')+pic(cardImg(c))+`<h2>${gain?gain.why:'Подія на ринку'}</h2><p>${esc(c.text)}</p>${gain?kv([['Отримано', '+'+fmt(gain.amount), 'big pos']]):''}`; if(gain) SFX.bigcoin(); await infoSheet(h, g.cur.isBot && !anyHumanAffected(evs)); } } break; }
       case 'doodad': { const c=E.CARDS[ev.card]; const m=E.lifestyleMult(p); const h=head(ev.want?'Бажання куплено':'Витрата','var(--doodad)',p)+pic(cardImg(c))+`<h2>${esc(c.name)}</h2><p>${esc(c.text||(ev.want?'Куплено. Хай тішить.':'Незапланована витрата, яку доводиться оплатити.'))}${m>1?` <span class="mut">Стиль життя ×${m.toFixed(1).replace('.',',')}: що більша зарплата, то дорожчі звички.</span>`:''}</p>`+kv([['Сплачено', fmt(ev.amount), 'big negv'], ev.insured?['Страховка','−50% від ціни','pos']:null, ev.shield?['Подушка покрила', fmt(ev.shield), 'pos']:null, ev.back?['Залишок подушки повернуто', fmt(ev.back)]:null, ev.monthly?['Назавжди до витрат', `+${fmt(ev.monthly)}/міс · за рік ${fmt(ev.monthly*12)}`, 'negv']:null, ev.loan?['Новий борг', `${fmt(ev.loan.amount)} · ${fmt(ev.loan.pay)}/міс · за рік ${fmt(ev.loan.pay*12)}`, 'negv']:null]); SFX.bad(); if(human) vibrate(30); renderCenter(); await infoSheet(h, !human); break; }
       case 'baby': { const h=head('Дитина','var(--baby)',p)+pic('ev-baby','wide')+`<h2>${esc(p.name)}: народилась дитина!</h2><p>Тепер дітей: ${ev.n}. Витрати зростають на ${fmt(ev.cost)} щомісяця — і планка свободи піднімається.</p>`; SFX.baby(); renderCenter(); await infoSheet(h, !human); break; }
-      case 'downsize': { const h=head(ev.demob?'Демобілізація':'Звільнення','var(--downsize)',p)+pic(ev.demob&&IM['ev-demob']?'ev-demob':'ev-downsize','wide')+`<h2>${esc(p.name)}: ${ev.demob?'повернення додому':'скорочення'}</h2><p>${ev.demob?`Контракт завершено: зарплата тепер ${fmt(p.salary)}, витрати менші. `:''}Сплачено місяць витрат — ${fmt(ev.amount)}${ev.shield?` (подушка покрила ${fmt(ev.shield)})`:''}. Два наступні ходи пропускаються. Пасивний дохід, на відміну від зарплати, нікуди не зникає.</p>`; SFX.bad(); renderCenter(); await infoSheet(h, !human); break; }
+      case 'downsize': { const h=head(ev.demob?'Демобілізація':'Звільнення','var(--downsize)',p)+pic(ev.demob&&IM['ev-demob']?'ev-demob':'ev-downsize','wide')+`<h2>${esc(p.name)}: ${ev.demob?'повернення додому':'скорочення'}</h2><p>${ev.demob?`Контракт завершено: зарплата тепер ${fmt(p.salary)}, витрати менші. `:''}Сплачено місяць витрат — ${fmt(ev.amount)}${ev.shield?` (подушка покрила ${fmt(ev.shield)})`:''}. Наступний хід пропускається — але ви оберете, чим його наповнити. Пасивний дохід, на відміну від зарплати, нікуди не зникає.</p>`; SFX.bad(); renderCenter(); await infoSheet(h, !human); break; }
       case 'loss': toast(`${p.name}: ${ev.why} −${fmt(ev.amount)}`, 'negv'); SFX.bad(); renderCenter(); await wait(Math.round(500*T())); break;
       case 'gain': if(!ev.why) { toast(`${p.name}: +${fmt(ev.amount)}`, 'pos'); SFX.bigcoin(); } renderCenter(); await wait(Math.round(400*T())); break;
       case 'charity': toast(`${p.name}: пожертва ${fmt(ev.amount)}`); break;
@@ -2160,17 +2245,21 @@ async function playEvents(evs){
       case 'upgraded': toast(`${p.name}: ремонт ${ev.n} об. → +${fmt(ev.gained)}/міс`, 'pos'); SFX.buy(); renderCenter(); break;
       case 'error': toast(ev.text, 'negv'); SFX.error(); break;
       case 'milestone': if(escHold && escHold.player===ev.player) break; toast(`${p.name}: ${ev.text}`, 'gold', BADGE[ev.key]); SFX.milestone(); if(mine) FX.burst(['f50','f75','pass'].includes(ev.key)?26:14, CONF_WIN, 0.5, 0.35, 0.8); await wait(Math.round(700*T())); break;
-      case 'escape': { await animateEscape(ev); renderCenter(); layoutTokens(); const h=head('Вихід з кола','var(--dream)',p)+pic('ev-escape','wide')+`<h2>${esc(p.name)}: вихід на трасу!</h2><p>Пасивний дохід перевищив витрати. Тепер дохід у 100 разів більший: ${fmt(ev.amount)} за кожну клітинку 💰. Перший дохід уже на рахунку.${g.state().mode==='daily'?'':` Мета: купити мрію «${esc(p.dreamName)}» (${fmt(p.dreamPrice)}) або подвоїти дохід інвестиціями.`}</p>`; if(g.state().mode!=='daily') await infoSheet(h, !human); centerFocus=null; renderCenter(); break; }
+      case 'escape': { await animateEscape(ev); renderCenter(); layoutTokens(); const h=head('Вихід з кола','var(--dream)',p)+pic('ev-escape','wide')+`<h2>${esc(p.name)}: вихід на трасу!</h2><p>Пасивний дохід перевищив витрати. Тепер дохід у 100 разів більший: ${fmt(ev.amount)} за кожну клітинку 💰. Перший дохід уже на рахунку.${g.state().mode==='daily'?'':` Мета: купити мрію «${esc(p.dreamName)}» (${fmt(p.dreamPrice)}) або інвестиціями збільшити дохід траси в ${(1+E.DOUBLE_K).toString().replace('.',',')} раза.`}</p>`; if(g.state().mode!=='daily') await infoSheet(h, !human); centerFocus=null; renderCenter(); break; }
       case 'bankrupt': { const h=head('Банкрутство','var(--neg)',p)+pic('ev-bankrupt','wide')+`<h2>${esc(p.name)}: банкрутство</h2><p>Усі активи втрачено, борги банку списано, два ходи пропускаються. Гра продовжується.</p>`; SFX.bad(); await infoSheet(h, !human); break; }
       case 'blackout': { const anyHuman=ev.hits.some(h=>!g.pl(h.player).isBot); const rows=ev.hits.map(h=>{ const q=g.pl(h.player); return `<div class="lrow"><div class="n">${esc(q.name)}${h.overtime?`<small>понаднормові енергетика +${fmt(h.overtime)}</small>`:''}</div><div class="v num ${h.gain-h.loss>=0?'pos':'negv'}">${h.gain-h.loss>=0?'+':''}${fmt(h.gain-h.loss)}</div></div>`; }).join('');
         const h=head('Енергія','var(--energy)')+pic('ev-blackout','wide')+`<h2>Графіки відключень</h2><p>Бізнеси від мережі без власної генерації втрачають місячний потік. Генератори, сонячні станції й енергонезалежні будинки заробляють подвійно.</p>${rows?`<div class="ledger" style="margin-top:10px">${rows}</div>`:'<p class="mut">Нікого з гравців це не зачепило.</p>'}`; SFX.bad(); renderCenter(); await infoSheet(h, !anyHuman); break; }
       case 'tariff': { const hum=(ev.owners||[]).filter(i=>!g.pl(i).isBot); SFX.coin(); renderCenter(); if(hum.length && IM['ev-tariff']){ const rows=hum.map(i=>{ const q=g.pl(i); return `<div class="lrow"><div class="n">${esc(q.name)}<small>генерація дає більше</small></div><div class="v num pos">${fmt(E.passive(q))}/міс</div></div>`; }).join(''); await infoSheet(head('Енергія','var(--energy)')+pic('ev-tariff','wide')+`<h2>Зелений тариф підвищено</h2><p>Сонячні станції, генератори й енергонезалежні будинки тепер приносять на 10% більше потоку.</p><div class="ledger" style="margin-top:10px">${rows}</div>`, false); } else { toast(`⚡ Зелений тариф підвищено: генерація дає більше`, 'pos'); await wait(Math.round(600*T())); } break; }
       case 'energyEvent': break;
       case 'shield': toast(`🛡 ${p.name}: подушка покрила ${fmt(ev.used)}${ev.back?`, повернуто ${fmt(ev.back)}`:''}`, 'gold'); SFX.milestone(); break;
-      case 'payday': if(ev.note && p.idx===viewer().idx) toast(`${p.name}: ${ev.note}`); break;
+      case 'payday': if(ev.note && p.idx===viewer().idx) toast(`${p.name}: ${ev.note}`); if(ev.fast && (ev.shock||ev.debt) && mine) toast(`${ev.shock?`ринок просів: −${fmt(ev.shock)}`:''}${ev.shock&&ev.debt?' · ':''}${ev.debt?`партнеру: −${fmt(ev.debt)}`:''}`, 'negv'); break;
       case 'autosave': if(mine) toast(`🐷 Відкладено ${fmt(ev.amount)}${ev.bought?` → депозит +${ev.bought}`:''}`, 'pos'); break;
       case 'nudge': if(human){ toast(ev.text, 'coach'); SFX.milestone(); await wait(Math.round(1200*T())); } break;
-      case 'wantWait': toast(`${p.name}: почекає — наступного разу дешевше`); break;
+      case 'wantWait': toast(`${p.name}: почекає — наступного разу на ${ev.pct||20} % дешевше`); break;
+      case 'bonus': toast(`${p.name}: ${ev.why.toLowerCase()} +${fmt(ev.amount)}`, 'pos'); SFX.coin(); renderCenter(); if(mine) FX.burst(8, CONF_MONEY, 0.5, 0.3, 0.45); await wait(Math.round(450*T())); break;
+      case 'vacancy': { const c=E.CARDS[ev.card]; const anyHuman=ev.hits.some(h=>!g.pl(h.player).isBot); const rows=ev.hits.map(h=>`<div class="lrow"><div class="n">${esc(g.pl(h.player).name)}<small>${esc(h.name)}</small></div><div class="v num negv">−${fmt(h.cf)}/міс × ${E.IDLE_PAYDAYS}</div></div>`).join('');
+        const h=head('Ринок','var(--market)')+pic(c.what==='biz'?'mk-blackout-city':'mk-rent')+`<h2>${c.what==='biz'?'Простій бізнесу':'Орендар з’їхав'}</h2><p>${esc(c.text)}</p><div class="ledger" style="margin-top:10px">${rows}</div>`+tip('vacancy','Жоден актив не платить вічно без пауз. Подушка і кілька різних активів переживають простій спокійно; один об’єкт і нуль резерву — ні.'); SFX.bad(); renderCenter(); await infoSheet(h, !anyHuman); break; }
+      case 'fastEvent': { const c=E.CARDS[ev.card]; const h=head('Траса','var(--neg)',p)+pic('mk-fx-down')+`<h2>${esc(c.name)}</h2><p>${esc(c.text)}</p>`+kv([['Інвестиції дають менше', `−${fmt(ev.loss)} за виплату`, 'negv'],['Тривалість', `${E.FAST_SHOCK_PAYDAYS} виплати`]])+tip('crash','Ринки падають завжди — питання лише коли. Базовий дохід траси не залежить від біржі: саме тому він і база.'); SFX.bad(); renderCenter(); await infoSheet(h, !human); break; }
       case 'wantNo': toast(`${p.name}: «не треба» — заощаджено ${fmt(ev.amount)}`, 'pos'); break;
       case 'win': break;
     }
@@ -2179,7 +2268,7 @@ async function playEvents(evs){
 function anyHumanAffected(evs){ return evs.some(e=>e.player!=null && !g.pl(e.player).isBot && ['loss','gain'].includes(e.type)); }
 
 async function doAct(a){
-  if(busy || !g) return; busy=true; renderCenter();
+  if(busy || !g) return; tourClear(true); busy=true; renderCenter();
   const evs=g.act(a); save();
   await playEvents(evs);
   busy=false; afterEvents();
@@ -2191,6 +2280,7 @@ function afterEvents(){
   const p=g.pl(pd.player!=null?pd.player:s.cur);
   if(p.isBot){ setTimeout(botStep, Math.round((pd.type==='roll'?700:350)*T())); return; }
   turbo=false; renderCenter(); layoutTokens();
+  if(pd.type==='roll' && !p.isBot) tourStart();
   const humans=s.players.filter(x=>!x.isBot).length;
   if(humans>1 && p.idx!==lastHuman && pd.type!=='stockSell' && pd.type!=='market'){ lastHuman=p.idx; sheetOpen(head('Передайте пристрій','var(--muted)')+`<h2>Хід: ${esc(p.name)}</h2><p class="flavor">${esc(p.profName)} · ${fmt(p.cash)}</p><div class="sh-actions"><button class="btn primary" id="sh-go">Готово</button></div>`); $('#sh-go').onclick=()=>{ SFX.tap(); sheetClose(); showPendingSheet(); }; return; }
   showPendingSheet();
@@ -2201,7 +2291,7 @@ async function botStep(){
   busy=true; renderCenter();
   /* повторна відмова від уже показаної угоди — лише тост, без паузи; купівля чужої угоди — повна картка */
   if(pd.type==='dealOffer' && a.type!=='buy'){ toast(`${p.name}: теж відмовляється`); await wait(Math.round(550*T())); }
-  else if(['deal','dealOffer','stockSell','market','charity','shortfall','fastDeal','dream','choice','upgrade','want'].includes(pd.type)) await botSheet(pd, p, a);
+  else if(['deal','dealOffer','stockSell','market','charity','shortfall','fastDeal','dream','choice','upgrade','want','jobless'].includes(pd.type)) await botSheet(pd, p, a);
   const evs=g.act(a); save();
   await playEvents(evs);
   busy=false; afterEvents();
@@ -2209,21 +2299,25 @@ async function botStep(){
 
 /* ---------- підсумок ---------- */
 function showResult(){
-  const s=g.state(); const w=s.winner!=null?g.pl(s.winner):null; const last=s.log.slice().reverse().find(l=>l.text.startsWith('🏆'));
+  tourClear(true); const s=g.state(); const w=s.winner!=null?g.pl(s.winner):null; const last=s.log.slice().reverse().find(l=>l.text.startsWith('🏆'));
   const me=s.players.find(p=>!p.isBot)||s.players[0];
   const rank=s.players.slice().sort((a,b)=>{ if(a.won!==b.won) return a.won?-1:1; if((a.track==='fast')!==(b.track==='fast')) return a.track==='fast'?-1:1; if(a.track==='fast') return (b.fastCf-a.fastCf)||(b.cash-a.cash); return E.freedomPct(b)-E.freedomPct(a) || E.netWorth(b)-E.netWorth(a); });
   let rec=''; if(s.mode!=='daily' && !s.recorded){ s.recorded=true; const rr=recordGame(s); if(rr&&rr.newBest&&rr.r.bestEscape) rec=`<p class="pos" style="font-size:13px;margin:10px 0 0">Новий особистий рекорд: вихід з кола за ${rr.r.bestEscape.turns} ходів!</p>`; }
   const dbh = me && !me.isBot ? debriefHTML(me) : '';
-  let daily=''; if(s.mode==='daily' && w){ if(!s.recorded){ s.recorded=true; const rr=records(); recordBadges(rr, w); recordSkills(rr, w); store.set(REC_KEY, rr); } const r=dailyRecord(w.stats.turns); const di=dailyInfo(); daily=`<div class="dailybox"><div><small>Сьогодні</small><b>${w.stats.turns} ходів</b></div><div><small>Найкраще за день</small><b>${di.today}</b></div><div><small>Рекорд</small><b>${di.allBest}</b></div><div><small>Серія днів</small><b>${di.streak}</b></div>${r.improved&&r.prev!=null?`<p class="pos" style="grid-column:1/-1;margin:0;font-size:13px">Новий найкращий результат дня (було ${r.prev})!</p>`:''}</div>`; }
+  let newTitles=[]; let bench=null, beat=false; if(s.mode==='daily' && w){ bench=dailyBench(); const bt=bench.filter(b=>b.turns).map(b=>b.turns); beat = bt.length>0 && w.stats.turns < Math.min(...bt); }
+  if(!s.titled && me && !me.isBot){ s.titled=true; newTitles=awardTitles(me, s, beat); }
+  let daily=''; if(s.mode==='daily' && w){ if(!s.recorded){ s.recorded=true; const rr=records(); recordBadges(rr, w); recordSkills(rr, w); store.set(REC_KEY, rr); } const r=dailyRecord(w.stats.turns); const di=dailyInfo(); daily=`<div class="dailybox"><div><small>Сьогодні</small><b>${w.stats.turns} ходів</b></div><div><small>Найкраще за день</small><b>${di.today}</b></div><div><small>Рекорд</small><b>${di.allBest}</b></div><div><small>Серія днів</small><b>${di.streak}</b></div>${r.improved&&r.prev!=null?`<p class="pos" style="grid-column:1/-1;margin:0;font-size:13px">Новий найкращий результат дня (було ${r.prev})!</p>`:''}</div>${bench?`<div class="debrief" style="margin-top:10px"><div class="label">${beat?'🏆 Ви обіграли всіх ботів':'Боти на тих самих картках'}</div>${benchHTML(bench, w.stats.turns)}</div>`:''}`; }
+  const titlesHTML = newTitles.length ? `<div class="titles-new"><small>Нові титули</small>${newTitles.map(k=>`<span>${esc(TITLES[k][0])}</span>`).join('')}</div>` : '';
   const badges=Object.keys(BADGE).filter(k=>me.flags&&me.flags[k]&&IM[BADGE[k]]).map(k=>`<img src="${IM[BADGE[k]]}" alt="" title="${k}">`).join('');
   const rows=rank.map((p,i)=>`<div class="pcard"><div class="hd"><span class="mut num" style="width:18px">${i+1}</span><i style="background:${HEX[p.idx]}"></i><b>${esc(p.name)}</b><span class="pill${p.track==='fast'?' fast':''}">${p.won?'🏆 перемога':p.track==='fast'?'на трасі':`коло · ${E.freedomPct(p)}%`}</span></div>
     <div class="st"><span>Професія <b>${esc(p.profName)}</b></span><span>Ходів <b>${p.stats.turns}</b></span><span>Пасивний дохід <b>${fmt(E.passive(p))}</b></span><span>Чисті активи <b>${fmt(E.netWorth(p))}</b></span><span>Угод / продажів <b>${p.stats.deals} / ${p.stats.sold}</b></span><span>Вихід з кола <b>${p.escapedRound?`раунд ${p.escapedRound}`:'—'}</b></span></div></div>`).join('');
-  $('#overlay').innerHTML=`<div class="result">${pic(w&&w.won&&s.mode!=='daily'?'ev-win':'ev-escape','wide')}<div class="mut" style="letter-spacing:.14em;font-size:11px;text-transform:uppercase">${s.mode==='daily'?'Виклик дня завершено':'Гру завершено'}</div><h2>${w?`<b>${esc(w.name)}</b>${s.mode==='daily'?'':': перемога'}`:'Нічия'}</h2><div class="how">${last?esc(last.text.replace(/^🏆\s*[^:]*:\s*/,'')):''}</div>${badges?`<div class="badges">${badges}</div>`:''}${daily}${rec}${dbh}${me.hist.length>=3?sparkHTML(me, `${esc(me.name)}: пасивний дохід проти витрат`):''}<div class="stand">${rows}</div>
-    <div class="sh-actions" style="margin-top:18px">${s.mode==='daily'?`<button class="btn primary" id="r-again">Спробувати ще раз</button>`:`<button class="btn primary" id="r-new">Нова гра</button>`}<button class="btn ghost" id="r-menu">У меню</button><button class="btn ghost" id="r-close">Подивитись поле</button></div></div>`;
+  $('#overlay').innerHTML=`<div class="result">${pic(w&&w.won&&s.mode!=='daily'?'ev-win':'ev-escape','wide')}<div class="mut" style="letter-spacing:.14em;font-size:11px;text-transform:uppercase">${s.mode==='daily'?'Виклик дня завершено':'Гру завершено'}</div><h2>${w?`<b>${esc(w.name)}</b>${s.mode==='daily'?'':': перемога'}`:'Нічия'}</h2><div class="how">${last?esc(last.text.replace(/^🏆\s*[^:]*:\s*/,'')):''}</div>${badges?`<div class="badges">${badges}</div>`:''}${titlesHTML}${daily}${rec}${dbh}${me.hist.length>=3?sparkHTML(me, `${esc(me.name)}: пасивний дохід проти витрат`):''}<div class="stand">${rows}</div>
+    <div class="sh-actions" style="margin-top:18px">${s.mode==='daily'?`<button class="btn primary" id="r-again">Спробувати ще раз</button>`:`<button class="btn primary" id="r-new">Нова гра</button>`}<button class="btn ghost" id="r-share">Поділитися</button><button class="btn ghost" id="r-menu">У меню</button><button class="btn ghost" id="r-close">Подивитись поле</button></div></div>`;
   $('#overlay').classList.remove('hidden');
   const nb=$('#r-new'); if(nb) nb.onclick=()=>{ $('#overlay').classList.add('hidden'); quickGame(); };
   const ab=$('#r-again'); if(ab) ab.onclick=()=>{ $('#overlay').classList.add('hidden'); dailyGame(); };
   $('#r-menu').onclick=()=>{ $('#overlay').classList.add('hidden'); toMenu(); };
+  $('#r-share').onclick=()=>{ SFX.tap(); shareResult(me, s); };
   $('#r-close').onclick=()=>{ $('#overlay').classList.add('hidden'); };
 }
 
@@ -2350,6 +2444,7 @@ function renderAch(){ const el=$('#ach-body'); const r=records(); const di=daily
     ${r.skills&&r.skills.n?`<h2>Профіль звичок</h2><p class="mut" style="font-size:13px;margin:0 0 8px">Середнє за ${r.skills.n} ${r.skills.n===1?'гру':r.skills.n<5?'гри':'ігор'} — як ви граєте, а не як вам щастить.</p><div class="scores">${['Дисципліна','Інвестиційне око','Терпіння','Ризик'].map((k,i)=>{ const v=Math.round(r.skills.sum[i]/r.skills.n); return `<div class="sc"><div class="row between"><span>${k}</span><b class="num" style="color:${scoreColor(v)}">${v}</b></div><div class="bar"><i style="width:${v}%;background:${scoreColor(v)}"></i></div></div>`; }).join('')}</div>`:''}
     <h2>Значки</h2><p class="mut" style="font-size:13px;margin:0 0 8px">Віхи на шляху до свободи. Число — скільки разів здобуто.</p>
     <div class="badgegrid">${Object.keys(BADGE_INFO).map(k=>{ const n=bd[k]||0; return `<div class="bd${n?'':' locked'}">${IM[BADGE[k]]?`<img src="${IM[BADGE[k]]}" alt="">`:'<span class="ph">★</span>'}<b>${BADGE_INFO[k][0]}</b><small>${BADGE_INFO[k][1]}</small>${n?`<span class="cnt">×${n}</span>`:''}</div>`; }).join('')}</div>
+    <h2>Титули</h2><p class="mut" style="font-size:13px;margin:0 0 8px">За поведінку, а не за везіння.</p><div class="badgegrid titles">${Object.keys(TITLES).map(k=>{ const n=(r.titles||{})[k]||0; return `<div class="bd${n?'':' locked'}"><span class="ph">${({spartan:'🛡',noloan:'🏦',assets10:'🏘',beatBots:'🤖',habit7:'📅',dream:'⭐',double:'📈',cool:'🧊'})[k]}</span><b>${TITLES[k][0]}</b><small>${TITLES[k][1]}</small>${n?`<span class="cnt">×${n}</span>`:''}</div>`; }).join('')}</div>
     <h2>Виклик дня</h2><div class="kpis"><div><small>Днів зіграно</small><b class="num">${di.played||0}</b></div><div><small>Серія</small><b class="num">${di.streak||0}</b></div><div><small>Рекорд</small><b class="num">${di.allBest?di.allBest+' ход.':'—'}</b></div></div>
     <p class="mut" style="font-size:13px;margin:8px 2px 0">Сьогодні: ${esc(di.prof.name)} · мрія «${esc(di.dream.name)}»${di.today?` · ваш результат ${di.today} ход.`:' · ще не грали'}.</p>`; }
 function renderProf(){ const el=$('#prof-body'); if(el.dataset.done) return; el.dataset.done=1;
@@ -2362,11 +2457,71 @@ function renderProf(){ const el=$('#prof-body'); if(el.dataset.done) return; el.
     <h2>Суперники</h2><div class="botgrid">${bots}</div>`; }
 const SITE_RENDER={'scr-lib':renderLib, 'scr-gloss':renderGloss, 'scr-calc':renderCalc, 'scr-ach':renderAch, 'scr-prof':renderProf, 'scr-plan':renderPlan};
 
+/* ---------- виклик дня: боти на тому самому сіді ---------- */
+const BENCH_KEY='potik.bench';
+function dailyBench(){ const d=dailyInfo(); const cache=store.get(BENCH_KEY,{}); if(cache.k===d.k && cache.v===2 && cache.res) return cache.res; const res=[];
+  for(const [name,style] of [['Оля','safe'],['Макс','bold'],['Іра','stock'],['Тарас','normal']]){ let turns=null; try{ const gb=new E.Game({mode:'daily', dayKey:d.k, players:[{name, isBot:true, style, profession:d.prof.id, dream:d.dream.id}]}, d.seed); let guard=0, n=0; while(gb.state().phase==='play' && gb.state().turn<600 && n<6000){ const a=BOT.decide(gb); if(!a) break; const before=JSON.stringify(gb.pending); gb.act(a); n++; if(JSON.stringify(gb.pending)===before && !['loan','repay','sellAsset','redeem','sellNow','autoSave'].includes(a.type)){ if(++guard>50) break; } else guard=0; } const pb=gb.state().players[0]; turns=pb.escTurns||null; }catch(e){ turns=null; } res.push({name, style, turns}); }
+  store.set(BENCH_KEY,{k:d.k, v:2, res}); return res; }
+function benchHTML(res, mine){ const best=res.filter(r=>r.turns).sort((a,b)=>a.turns-b.turns); return `<div class="bench">${res.map(r=>`<div class="br${mine!=null&&r.turns&&mine<r.turns?' beat':''}">${glyph(r.style,'glyph sm')}<b>${esc(r.name)}</b><span class="num">${r.turns?r.turns+' ход.':'не вийшов'}</span></div>`).join('')}</div>${best.length?`<p class="mut" style="font-size:12px;margin:6px 0 0">Найкращий бот сьогодні — ${esc(best[0].name)}: ${best[0].turns} ходів. Ті самі стартові картки, що й у вас.</p>`:''}`; }
+
+/* ---------- титули: за поведінку, а не за везіння ---------- */
+const TITLES={spartan:['Спартанець','Жодного купленого бажання за гру'], noloan:['Без кредитів','Вийшли з кола, не позичивши жодної гривні'], assets10:['Інвестор','Десять активів одночасно'], beatBots:['Швидше за ботів','Обіграли всіх чотирьох у виклику дня'], habit7:['Сім днів поспіль','Тиждень звички дня без пропусків'], dream:['Мрійник','Здійснили мрію'], double:['Капіталіст','Дохід траси ×2,5 інвестиціями'], cool:['Холодна голова','Жодного продажу в збиток і жодної нестачі за гру']};
+function awardTitles(me, s, benchBeaten){ const r=records(); r.titles=r.titles||{}; const got=[]; const d=me.stats.dec||{}; const add=k=>{ if(!TITLES[k]) return; r.titles[k]=(r.titles[k]||0)+1; got.push(k); };
+  if((d.wantBuy+d.wantWait+d.wantNo)>0 && d.wantBuy===0) add('spartan');
+  if(me.escTurns && !me.stats.loansTaken) add('noloan');
+  if((me.stats.maxAssets||0)>=10) add('assets10');
+  if(benchBeaten) add('beatBots');
+  if(me.won && s.mode!=='daily'){ const last=s.log.slice().reverse().find(l=>l.text.startsWith('🏆')); if(last && last.text.includes('мрію')) add('dream'); else if(last) add('double'); }
+  if(me.stats.turns>=20 && !d.sellLoss && !d.shortfalls) add('cool');
+  if(habitStreak(store.get(HAB_KEY,{done:{}}))>=7 && !(r.titles.habit7)) add('habit7');
+  store.set(REC_KEY,r); return got; }
+
+/* ---------- поділитися підсумком: картинка ---------- */
+async function shareResult(me, s){ const db=debrief(me); const W=1080, H=1350; const cv=document.createElement('canvas'); cv.width=W; cv.height=H; const x=cv.getContext('2d');
+  x.fillStyle='#0c0f15'; x.fillRect(0,0,W,H); x.fillStyle='#141922'; x.beginPath(); x.roundRect(60,60,W-120,H-120,40); x.fill();
+  x.fillStyle='#eef2f8'; x.font='200 72px -apple-system,Segoe UI,Roboto,sans-serif'; x.textAlign='center'; x.fillText('ПО', W/2-62, 190); x.fillStyle='#3ddc84'; x.font='700 72px -apple-system,Segoe UI,Roboto,sans-serif'; x.fillText('ТІК', W/2+66, 190);
+  x.fillStyle='#8b95a9'; x.font='500 30px -apple-system,Segoe UI,Roboto,sans-serif'; x.fillText('ГРА ПРО ГРОШІ, ЯКІ ПРАЦЮЮТЬ ЗАМІСТЬ ВАС', W/2, 240);
+  const head = me.won ? (s.mode==='daily'?`Вихід з кола за ${me.stats.turns} ходів`:'Перемога') : me.track==='fast' ? 'Вихід з кола найму' : `Коло: ${E.freedomPct(me)} % до свободи`;
+  x.fillStyle='#ffd36a'; x.font='600 60px -apple-system,Segoe UI,Roboto,sans-serif'; x.fillText(head, W/2, 360);
+  x.fillStyle='#eef2f8'; x.font='400 34px -apple-system,Segoe UI,Roboto,sans-serif'; x.fillText(`${me.profName} · ${me.stats.turns} ходів · пасивний дохід ${fmt(E.passive(me))}`, W/2, 420);
+  x.textAlign='left'; let y=520; x.fillStyle='#8b95a9'; x.font='600 26px -apple-system,Segoe UI,Roboto,sans-serif'; x.fillText('ЗВИЧКИ БАГАТИХ', 140, y); y+=50;
+  for(const sc of db.scores){ const v=sc.v==null?0:sc.v; x.fillStyle='#eef2f8'; x.font='500 36px -apple-system,Segoe UI,Roboto,sans-serif'; x.fillText(sc.k, 140, y); x.textAlign='right'; x.fillStyle=sc.v==null?'#5c6678':v>=70?'#3ddc84':v>=40?'#ffb340':'#ff5c6c'; x.font='700 36px -apple-system,Segoe UI,Roboto,sans-serif'; x.fillText(sc.v==null?'—':String(v), W-140, y); x.textAlign='left';
+    x.fillStyle='#263042'; x.beginPath(); x.roundRect(140,y+18,W-280,14,7); x.fill(); x.fillStyle=sc.v==null?'#263042':v>=70?'#3ddc84':v>=40?'#ffb340':'#ff5c6c'; x.beginPath(); x.roundRect(140,y+18,(W-280)*v/100,14,7); x.fill(); y+=96; }
+  y+=20; x.fillStyle='#8b95a9'; x.font='600 26px -apple-system,Segoe UI,Roboto,sans-serif'; x.fillText('ГОЛОВНИЙ УРОК ПАРТІЇ', 140, y); y+=46; const ep=db.episodes[0]; if(ep){ x.fillStyle='#d6dce6'; x.font='400 30px -apple-system,Segoe UI,Roboto,sans-serif'; const words=ep.text.split(' '); let line=''; for(const w of words){ const t=line?line+' '+w:w; if(x.measureText(t).width>W-280){ x.fillText(line,140,y); y+=42; line=w; } else line=t; } if(line){ x.fillText(line,140,y); y+=42; } }
+  x.fillStyle='#5c6678'; x.font='400 26px -apple-system,Segoe UI,Roboto,sans-serif'; x.textAlign='center'; x.fillText('Один файл · офлайн · Україна 2026', W/2, H-110);
+  const blob=await new Promise(r=>cv.toBlob(r,'image/png')); const file=new File([blob],'potik.png',{type:'image/png'});
+  try{ if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file], title:'Потік', text:head}); return; } }catch(e){ if(e && e.name==='AbortError') return; }
+  /* без системного «Поділитися» — показуємо картинку: утримати й зберегти, або посилання для завантаження */
+  const url=URL.createObjectURL(blob); $('#overlay').classList.add('hidden');
+  sheetOpen(`<div class="sh-type" style="color:var(--dream)"><i style="background:var(--dream)"></i>Поділитися</div><img src="${url}" alt="Підсумок гри" class="sharepic"><p class="flavor">Утримуйте картинку, щоб зберегти чи надіслати, або скористайтесь кнопкою.</p><div class="sh-actions"><a class="btn primary" href="${url}" download="potik.png">Зберегти картинку</a><button class="btn ghost" id="sh-ok">Гаразд</button></div>`);
+  $('#sh-ok').onclick=()=>{ SFX.tap(); sheetClose(); $('#overlay').classList.remove('hidden'); setTimeout(()=>URL.revokeObjectURL(url), 5000); }; }
+
+/* ---------- словник у картці ---------- */
+const TERM_MAP={'Грошовий потік':'Грошовий потік','Окупність внеску':'Окупність','Перший внесок':'Перший внесок','Іпотека (платить орендар)':'Іпотека','Дивіденд':'Дивіденди','Історичний діапазон':'Волатильність','Курс зараз':'Курс і комісія','Ціна продажу':'Курс і комісія','Замість цього':'Альтернативна вартість','Прибутковість':'Дохідність (ROI)','Пасивний дохід покриє це':'Пасивний дохід','Чисті активи':'Чисті активи','Назавжди до витрат':'Пасив','Партнеру з доходів траси':'Кредитне плече','У кредит':'Кредитне плече'};
+$('#sheet').addEventListener('click', e=>{ const t=e.target.closest('.tt'); if(!t) return; const def=CONTENT.glossary.find(x=>x.t===t.dataset.term); if(!def) return; const label=t.parentElement; const val=label.nextElementSibling; const ex=val&&val.nextElementSibling; if(ex && ex.classList.contains('termdef')){ ex.remove(); return; } document.querySelectorAll('.termdef').forEach(d=>d.remove()); const d=document.createElement('div'); d.className='termdef'; d.innerHTML=`<b>${esc(def.t)}</b> — ${esc(def.d)} <span class="mut">${esc(def.g)}</span>`; val.after(d); SFX.tap(); });
+
+/* ---------- навчальна перша партія ---------- */
+const TOUR_KEY='potik.tour';
+function tourDone(k){ const t=store.get(TOUR_KEY,{}); return !!t[k]; }
+function tourFirstGame(){ return records().games===0 && !dailyInfo().played && g && g.state().mode!=='daily'; }
+let tourRes=null;
+function tourClear(markDone){ const t=$('#tour'); if(t){ if(markDone && t.dataset.key){ const st=store.get(TOUR_KEY,{}); st[t.dataset.key]=1; store.set(TOUR_KEY,st); } t.remove(); } document.querySelectorAll('.tour-hi').forEach(e=>e.classList.remove('tour-hi')); if(tourRes){ const r=tourRes; tourRes=null; r(false); } }
+function tourShow(key, selector, html){ return new Promise(res=>{ if(!tourFirstGame() || tourDone(key) || $('#scr-game').classList.contains('hidden')){ res(false); return; } const el=document.querySelector(selector); if(!el){ res(false); return; }
+  tourClear(false); el.classList.add('tour-hi'); tourRes=res; const r=el.getBoundingClientRect(); const below = r.bottom+170 < innerHeight;
+  const d=document.createElement('div'); d.id='tour'; d.className='tour'; d.dataset.key=key; d.innerHTML=`<div class="tour-box"><p>${html}</p><button class="btn primary sm" id="tour-ok">Зрозуміло</button></div>`; document.body.appendChild(d);
+  const box=d.firstElementChild; let top = below ? r.bottom+14 : Math.max(10, r.top-14-box.offsetHeight); top=Math.min(top, innerHeight-box.offsetHeight-10); box.style.top=top+'px'; d.classList.add(below?'below':'above'); box.style.setProperty('--ax', Math.min(Math.max(24, r.left+r.width/2-16), innerWidth-48)+'px');
+  $('#tour-ok').onclick=()=>{ SFX.tap(); el.classList.remove('tour-hi'); d.remove(); const t=store.get(TOUR_KEY,{}); t[key]=1; store.set(TOUR_KEY,t); tourRes=null; res(true); }; }); }
+async function tourStart(){ if(!tourFirstGame()) return; if(tourDone('dice') && tourDone('ring') && tourDone('tabs')) return;
+  await tourShow('dice', '#center .cbtn', `<b>Ваш хід.</b> Кидайте кубик — фішка піде за годинниковою стрілкою. Проходячи <b>Зарплату</b>, ви отримуєте грошовий потік: доходи мінус витрати.`);
+  await tourShow('ring', '#center', `<b>Кільце — шлях до свободи.</b> Воно показує, яку частину витрат уже покриває пасивний дохід від активів. Замкнеться — ви вийдете з кола найму на трасу.`);
+  await tourShow('tabs', '#tabs', `<b>Звіт, Активи, Гравці, Журнал.</b> У Звіті — банк, борги й перемикач «Плати собі першому». В Активах папери можна продати будь-коли.`); }
+async function tourDeal(){ if(!tourFirstGame() || tourDone('deal')) return; await wait(340); const kvEl=$('#sheet .kv'); if(!kvEl || !$('#sheet').classList.contains('show')) return; await tourShow('deal', '#sheet .kv', `<b>Дивіться на потік, а не на ціну.</b> Потік — скільки актив кладе в кишеню щомісяця; окупність — за скільки місяців повернеться внесок. Нижче блок «Для вас»: що зміниться саме у вас.`); }
+
 /* ---------- головне меню ---------- */
 function toMenu(){ sheetClose(); show('scr-menu'); renderMenu(); }
-function renderMenu(){ const di=dailyInfo(); $('#m-continue').hidden=!hasSave(); const td=$('#today'); if(td){ td.innerHTML=todayHTML(); const hb=$('#habit-done'); if(hb) hb.onchange=e=>{ toggleHabit(e.target.checked); if(e.target.checked){ SFX.milestone(); FX.burst(14, CONF_WIN, 0.5, 0.35, 0.6); } renderMenu(); }; td.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{ SFX.tap(); renderPlan(); show('scr-plan'); }); } $('#m-daily-sub').textContent = `${di.prof.name} · ${di.today?`сьогодні ${di.today} ход.`:'ще не грали'}${di.allBest?` · рекорд ${di.allBest}`:''}${di.streak>1?` · серія ${di.streak}`:''}`;
+function renderMenu(){ const di=dailyInfo(); const saved=hasSave(); const r0=records(); $('#m-continue').hidden=!saved; $('#m-continue').className='btn'+(saved?' primary':''); const q=$('#m-quick'); q.className='btn'+(saved?'':' primary'); q.innerHTML=saved?'Нова гра<small>поточна партія буде втрачена</small>':'Грати<small>ви проти двох ботів · 15–20 хвилин</small>'; delete q.dataset.sure; const st=document.querySelector('#scr-menu .steps'); if(st) st.hidden=(r0.games>0 || di.played>0); const td=$('#today'); if(td){ td.innerHTML=todayHTML(); const hb=$('#habit-done'); if(hb) hb.onchange=e=>{ toggleHabit(e.target.checked); if(e.target.checked){ SFX.milestone(); FX.burst(14, CONF_WIN, 0.5, 0.35, 0.6); } renderMenu(); }; td.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{ SFX.tap(); renderPlan(); show('scr-plan'); }); } $('#m-daily-sub').textContent = `${di.prof.name} · ${di.today?`сьогодні ${di.today} ход.`:'ще не грали'}${di.allBest?` · рекорд ${di.allBest}`:''}${di.streak>1?` · серія ${di.streak}`:''}`;
   const r=records(); $('#m-rec').textContent = r.games ? `Ігор: ${r.games} · перемог: ${r.wins}${r.bestEscape?` · найшвидший вихід з кола: ${r.bestEscape.turns} ходів (${r.bestEscape.prof})`:''}` : ''; }
-$('#m-quick').addEventListener('click', ()=>{ SFX.tap(); quickGame(); });
+$('#m-quick').addEventListener('click', ()=>{ SFX.tap(); const q=$('#m-quick'); if(hasSave() && !q.dataset.sure){ q.dataset.sure='1'; q.innerHTML='Точно почати нову?<small>збережена партія зникне · торкніться ще раз</small>'; setTimeout(()=>{ if(q.dataset.sure){ delete q.dataset.sure; renderMenu(); } }, 4000); return; } quickGame(); });
 $('#m-daily').addEventListener('click', ()=>{ SFX.tap(); dailyGame(); });
 $('#m-new').addEventListener('click', ()=>{ SFX.tap(); show('scr-setup'); renderSetup(); });
 $('#m-continue').addEventListener('click', ()=>{ SFX.tap(); if(!continueGame()) toast('Збереження не знайдено'); });
@@ -2381,5 +2536,6 @@ document.querySelectorAll('.legend li[data-cell]').forEach(li=>{ const src=IM['c
 return { get game(){ return g; }, newGame, quickGame, dailyGame, continueGame, doAct, botStep, showPendingSheet, playEvents, showResult, get busy(){ return busy; }, set speed(v){ pref.speed=v; }, set sound(v){ pref.sound=v; }, set pause(v){ pref.pause=v; }, set escScale(v){ escScale=v; } };
 })();
 </script>
+<script>if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){ navigator.serviceWorker.register('sw.js').catch(function(){}); }</script>
 </body>
 </html>
