@@ -1,0 +1,8 @@
+ГОТОВО ДЛЯ GITHUB PAGES
+
+1. Розпакуйте цей ZIP.
+2. У репозиторії GitHub відкрийте Add file → Upload files.
+3. Завантажте index.html, README.md, .nojekyll (і цей файл можна не завантажувати).
+4. Settings → Pages → Deploy from a branch → main / (root) → Save.
+
+Головний файл сайту: index.html
